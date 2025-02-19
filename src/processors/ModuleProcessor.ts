@@ -54,31 +54,67 @@ export class ModuleProcessor extends BaseProcessor {
 
       if (typeof provider === 'string') {
         providerName = provider;
-        providerId = this.generateId('provider', providerName);
       } else if (typeof provider === 'function') {
         providerName = provider.name;
-        providerId = this.generateId('provider', providerName);
       } else if (provider && typeof provider === 'object') {
-        providerName = provider.provide?.toString() || 'UnknownProvider';
-        providerId = this.generateId('provider', providerName);
+        providerName = (provider.provide?.toString() || provider.useClass?.name || 'UnknownProvider')
+          .split('<')[0]
+          .trim();
       }
 
-      this.builder.addNode({
-        id: providerId,
-        type: 'Provider',
-        name: providerName,
-        properties: {
-          scope: 'module',
-          level: 3,
-          isInjectable: true,
-        },
-      });
+      providerId = this.generateId('provider', providerName);
+
+      if (!this.builder.hasNode(providerId)) {
+        this.builder.addNode({
+          id: providerId,
+          type: 'Provider',
+          name: providerName,
+          properties: {
+            scope: 'module',
+            level: 3,
+            isInjectable: true,
+          },
+        });
+      }
 
       this.builder.addRelationship({
         from: moduleId,
         to: providerId,
         type: 'PROVIDES',
       });
+
+      if (typeof provider === 'function' && provider.prototype) {
+        this.processProviderMethods(provider, providerId);
+      }
+    });
+  }
+
+  private processProviderMethods(providerClass: Function, providerId: string): void {
+    const prototype = providerClass.prototype;
+    const methodNames = Object.getOwnPropertyNames(prototype).filter(
+      (name) => name !== 'constructor' && typeof prototype[name] === 'function',
+    );
+
+    methodNames.forEach((methodName) => {
+      const methodId = this.generateId('method', `${providerId}.${methodName}`);
+
+      if (!this.builder.hasNode(methodId)) {
+        this.builder.addNode({
+          id: methodId,
+          type: 'Method',
+          name: methodName,
+          properties: {
+            visibility: 'public',
+            level: 4,
+          },
+        });
+
+        this.builder.addRelationship({
+          from: providerId,
+          to: methodId,
+          type: 'HAS_METHOD',
+        });
+      }
     });
   }
 

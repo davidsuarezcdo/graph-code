@@ -16,19 +16,22 @@ export class ClassProcessor extends BaseProcessor {
     const className = node.name.getText();
     const extractedDecorators = this.decoratorProcessor.extractDecorators(node);
     const isController = extractedDecorators.some((d) => d.name === 'Controller');
-    const classId = this.generateId(isController ? 'controller' : 'class', className);
     const isInjectable = extractedDecorators.some((d) => d.name === 'Injectable');
+
+    // Generate the correct ID based on the type of the class
+    const classId = this.generateId(isController ? 'controller' : isInjectable ? 'provider' : 'class', className);
 
     this.builder.addNode({
       id: classId,
-      type: isController ? 'Controller' : 'Class',
+      type: isController ? 'Controller' : isInjectable ? 'Provider' : 'Class',
       name: className,
       properties: {
         isAbstract: node.modifiers?.some((m) => m.kind === ts.SyntaxKind.AbstractKeyword) || false,
         documentation: this.getDocumentation(node),
         isInjectable,
         isController,
-        level: isController ? 2 : isInjectable ? 4 : 5,
+        level: isController ? 2 : isInjectable ? 3 : 5,
+        scope: isInjectable ? 'module' : undefined,
       },
       decorators: extractedDecorators,
     });
@@ -52,6 +55,7 @@ export class ClassProcessor extends BaseProcessor {
       if (!paramType) return;
 
       const cleanParamType = paramType.split('<')[0].trim();
+      // Use the clean type name for the provider ID
       const injectedServiceId = this.generateId('provider', cleanParamType);
       const paramName = param.name.getText();
 
