@@ -65,10 +65,16 @@ export class Neo4jGraphBuilder {
       // Índices para relaciones de herencia y tipos externos
       await session.run('CREATE INDEX external_types IF NOT EXISTS FOR (n:Node) ON (n.isExternal)');
       await session.run(
-        'CREATE INDEX inheritance_source IF NOT EXISTS FOR ()-[r:EXTENDS|IMPLEMENTS]-() ON (r.sourceType)',
+        'CREATE INDEX inheritance_source_extends IF NOT EXISTS FOR ()-[r:EXTENDS]-() ON (r.sourceType)',
       );
       await session.run(
-        'CREATE INDEX inheritance_target IF NOT EXISTS FOR ()-[r:EXTENDS|IMPLEMENTS]-() ON (r.targetType)',
+        'CREATE INDEX inheritance_source_implements IF NOT EXISTS FOR ()-[r:IMPLEMENTS]-() ON (r.sourceType)',
+      );
+      await session.run(
+        'CREATE INDEX inheritance_target_extends IF NOT EXISTS FOR ()-[r:EXTENDS]-() ON (r.targetType)',
+      );
+      await session.run(
+        'CREATE INDEX inheritance_target_implements IF NOT EXISTS FOR ()-[r:IMPLEMENTS]-() ON (r.targetType)',
       );
 
       // Índice para relaciones de inyección y configuración dinámica
