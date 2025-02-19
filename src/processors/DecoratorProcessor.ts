@@ -29,15 +29,17 @@ export class DecoratorProcessor extends BaseProcessor {
         });
       }
 
-      // Create relationship between node and its decorator
-      this.builder.addRelationship({
-        from: nodeId,
-        to: decoratorId,
-        type: 'HAS_DECORATOR',
-        properties: {
-          arguments: decorator.arguments || [],
-        },
-      });
+      // Solo crear la relación si el nodo decorado existe
+      if (this.builder.hasNode(nodeId)) {
+        this.builder.addRelationship({
+          from: nodeId,
+          to: decoratorId,
+          type: 'HAS_DECORATOR',
+          properties: {
+            arguments: decorator.arguments || [],
+          },
+        });
+      }
     });
   }
 
@@ -49,31 +51,34 @@ export class DecoratorProcessor extends BaseProcessor {
       const isInjectable = decorators.some((d) => d.name === 'Injectable');
       return this.generateId(isController ? 'controller' : isInjectable ? 'provider' : 'class', className);
     }
+
+    const parentClass = this.findParentClass(node);
+    if (!parentClass?.name) return undefined;
+
+    const parentDecorators = this.extractDecorators(parentClass);
+    const isController = parentDecorators.some((d) => d.name === 'Controller');
+    const isInjectable = parentDecorators.some((d) => d.name === 'Injectable');
+    const parentId = this.generateId(
+      isController ? 'controller' : isInjectable ? 'provider' : 'class',
+      parentClass.name.getText(),
+    );
+
     if (ts.isMethodDeclaration(node) && node.name) {
-      const parentClass = this.findParentClass(node);
-      if (parentClass?.name) {
-        const parentDecorators = this.extractDecorators(parentClass);
-        const isController = parentDecorators.some((d) => d.name === 'Controller');
-        const isInjectable = parentDecorators.some((d) => d.name === 'Injectable');
-        const parentId = this.generateId(
-          isController ? 'controller' : isInjectable ? 'provider' : 'class',
-          parentClass.name.getText(),
-        );
-        return this.generateId('method', `${parentId}.${node.name.getText().split('(')[0].trim()}`);
-      }
+      return this.generateId('method', `${parentId}.${node.name.getText().split('(')[0].trim()}`);
     }
+
     if (ts.isPropertyDeclaration(node) && node.name) {
-      const parentClass = this.findParentClass(node);
-      if (parentClass?.name) {
-        return this.generateId('property', `${parentClass.name.getText()}.${node.name.getText()}`);
-      }
+      return this.generateId('property', `${parentId}.${node.name.getText().split('(')[0].trim()}`);
     }
+
     if (ts.isParameter(node) && node.name) {
-      const parentClass = this.findParentClass(node);
-      if (parentClass?.name) {
-        return this.generateId('parameter', `${parentClass.name.getText()}.${node.name.getText()}`);
+      const parent = node.parent;
+      if (ts.isConstructorDeclaration(parent) || ts.isMethodDeclaration(parent)) {
+        const methodName = ts.isConstructorDeclaration(parent) ? 'constructor' : parent.name.getText();
+        return this.generateId('parameter', `${parentId}.${methodName}.${node.name.getText().split('(')[0].trim()}`);
       }
     }
+
     return undefined;
   }
 
