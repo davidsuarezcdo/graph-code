@@ -27,19 +27,31 @@ export class ModuleProcessor extends BaseProcessor {
   }
 
   private processModuleMetadata(moduleMetadata: ModuleDecoratorMetadata, moduleId: string, className: string): void {
-    this.builder.addNode({
-      id: moduleId,
-      type: 'Module',
-      name: className,
-      properties: {
-        imports: moduleMetadata.imports || [],
-        exports: moduleMetadata.exports || [],
-        providers: moduleMetadata.providers || [],
-        controllers: moduleMetadata.controllers || [],
-        isGlobal: Boolean(moduleMetadata.global),
-        level: className === 'AppModule' ? 1 : 2,
-      },
-    });
+    const cleanClassName = className.split('<')[0].trim();
+
+    if (!this.builder.hasNode(moduleId)) {
+      this.builder.addNode({
+        id: moduleId,
+        type: 'Module',
+        name: cleanClassName,
+        properties: {
+          imports: moduleMetadata.imports?.map((imp) => (typeof imp === 'function' ? imp.name : imp.toString())) || [],
+          exports: moduleMetadata.exports?.map((exp) => (typeof exp === 'function' ? exp.name : exp.toString())) || [],
+          providers:
+            moduleMetadata.providers?.map((prov) =>
+              typeof prov === 'function'
+                ? prov.name
+                : typeof prov === 'object'
+                ? prov.provide?.toString() || prov.useClass?.name || 'UnknownProvider'
+                : prov.toString(),
+            ) || [],
+          controllers:
+            moduleMetadata.controllers?.map((ctrl) => (typeof ctrl === 'function' ? ctrl.name : ctrl.toString())) || [],
+          isGlobal: Boolean(moduleMetadata.global),
+          level: cleanClassName === 'AppModule' ? 1 : 2,
+        },
+      });
+    }
 
     this.processProviders(moduleMetadata.providers || [], moduleId);
     this.processControllers(moduleMetadata.controllers || [], moduleId);

@@ -88,14 +88,21 @@ export class ClassProcessor extends BaseProcessor {
   }
 
   private getTypeNameFromTypeNode(typeNode: ts.TypeNode): string {
+    let typeName = '';
+
     if (ts.isTypeReferenceNode(typeNode)) {
-      return typeNode.typeName.getText();
+      typeName = typeNode.typeName.getText().split('<')[0].trim();
     } else if (ts.isArrayTypeNode(typeNode)) {
-      return this.getTypeNameFromTypeNode(typeNode.elementType);
+      typeName = this.getTypeNameFromTypeNode(typeNode.elementType) + '[]';
     } else if (ts.isUnionTypeNode(typeNode)) {
-      return typeNode.types.map((t) => this.getTypeNameFromTypeNode(t)).join(' | ');
+      typeName = typeNode.types.map((t) => this.getTypeNameFromTypeNode(t)).join(' | ');
+    } else if (ts.isLiteralTypeNode(typeNode)) {
+      typeName = typeNode.literal.getText().split('<')[0].trim();
+    } else {
+      typeName = typeNode.getText().split('<')[0].trim();
     }
-    return typeNode.getText();
+
+    return typeName;
   }
 
   private processHeritageClauses(node: ts.ClassDeclaration, nodeId: string): void {
@@ -224,24 +231,32 @@ export class ClassProcessor extends BaseProcessor {
   private processProperty(node: ts.PropertyDeclaration, classId: string): void {
     if (!node.name) return;
 
-    const propertyName = node.name.getText();
+    const propertyName = node.name.getText().split('(')[0].trim();
     const propertyId = this.generateId('property', `${classId}.${propertyName}`);
+    const extractedDecorators = this.decoratorProcessor.extractDecorators(node);
+    const propertyType = node.type ? this.getTypeNameFromTypeNode(node.type) : 'any';
 
-    this.builder.addNode({
-      id: propertyId,
-      type: 'Property',
-      name: propertyName,
-      properties: {
-        type: node.type ? node.type.getText() : 'any',
-        visibility: this.getVisibility(node),
-      },
-      decorators: this.decoratorProcessor.extractDecorators(node),
-    });
+    if (!this.builder.hasNode(propertyId)) {
+      this.builder.addNode({
+        id: propertyId,
+        type: 'Property',
+        name: propertyName,
+        properties: {
+          type: propertyType,
+          visibility: this.getVisibility(node),
+          level: 5,
+          isStatic: node.modifiers?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword) || false,
+          isReadonly: node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword) || false,
+          documentation: this.getDocumentation(node),
+        },
+        decorators: extractedDecorators,
+      });
 
-    this.builder.addRelationship({
-      from: classId,
-      to: propertyId,
-      type: 'HAS_PROPERTY',
-    });
+      this.builder.addRelationship({
+        from: classId,
+        to: propertyId,
+        type: 'HAS_PROPERTY',
+      });
+    }
   }
 }
