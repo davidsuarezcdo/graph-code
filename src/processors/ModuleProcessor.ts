@@ -50,19 +50,29 @@ export class ModuleProcessor extends BaseProcessor {
   private processProviders(providers: any[], moduleId: string): void {
     providers.forEach((provider) => {
       let providerName = '';
-      let providerId = '';
+      let providerClass = null;
 
       if (typeof provider === 'string') {
         providerName = provider;
       } else if (typeof provider === 'function') {
         providerName = provider.name;
+        providerClass = provider;
       } else if (provider && typeof provider === 'object') {
-        providerName = (provider.provide?.toString() || provider.useClass?.name || 'UnknownProvider')
-          .split('<')[0]
-          .trim();
+        if (provider.useClass) {
+          providerName = provider.useClass.name;
+          providerClass = provider.useClass;
+        } else if (provider.provide) {
+          providerName = provider.provide.toString();
+          if (typeof provider.useValue === 'function') {
+            providerClass = provider.useValue;
+          }
+        } else {
+          providerName = 'UnknownProvider_' + Math.random().toString(36).substr(2, 9);
+        }
+        providerName = providerName.split('<')[0].trim();
       }
 
-      providerId = this.generateId('provider', providerName);
+      const providerId = this.generateId('provider', providerName);
 
       if (!this.builder.hasNode(providerId)) {
         this.builder.addNode({
@@ -73,6 +83,7 @@ export class ModuleProcessor extends BaseProcessor {
             scope: 'module',
             level: 3,
             isInjectable: true,
+            isUnknown: providerName.startsWith('UnknownProvider_'),
           },
         });
       }
@@ -83,8 +94,8 @@ export class ModuleProcessor extends BaseProcessor {
         type: 'PROVIDES',
       });
 
-      if (typeof provider === 'function' && provider.prototype) {
-        this.processProviderMethods(provider, providerId);
+      if (providerClass && typeof providerClass === 'function' && providerClass.prototype) {
+        this.processProviderMethods(providerClass, providerId);
       }
     });
   }
@@ -100,7 +111,8 @@ export class ModuleProcessor extends BaseProcessor {
       const methodId = this.generateId('method', `${providerId}.${cleanMethodName}`);
 
       if (!this.builder.hasNode(methodId)) {
-        this.builder.addNode({
+        const method = prototype[methodName];
+        const methodInfo = {
           id: methodId,
           type: 'Method',
           name: cleanMethodName,
@@ -108,9 +120,11 @@ export class ModuleProcessor extends BaseProcessor {
             visibility: 'public',
             level: 4,
             returnType: 'unknown',
+            isAsync: method.constructor.name === 'AsyncFunction',
           },
-        });
+        };
 
+        this.builder.addNode(methodInfo);
         this.builder.addRelationship({
           from: providerId,
           to: methodId,
@@ -122,8 +136,21 @@ export class ModuleProcessor extends BaseProcessor {
 
   private processControllers(controllers: any[], moduleId: string): void {
     controllers.forEach((controller) => {
-      const controllerName =
-        typeof controller === 'function' ? controller.name : controller.toString().split('(')[0].trim();
+      let controllerName = '';
+      let controllerClass = null;
+
+      if (typeof controller === 'string') {
+        controllerName = controller;
+      } else if (typeof controller === 'function') {
+        controllerName = controller.name;
+        controllerClass = controller;
+      } else if (controller && typeof controller === 'object') {
+        controllerName = controller.toString().split('(')[0].trim();
+        if (typeof controller === 'function') {
+          controllerClass = controller;
+        }
+      }
+
       const controllerId = this.generateId('controller', controllerName);
 
       if (!this.builder.hasNode(controllerId)) {
@@ -142,13 +169,73 @@ export class ModuleProcessor extends BaseProcessor {
         to: controllerId,
         type: 'DECLARES_CONTROLLER',
       });
+
+      if (controllerClass && typeof controllerClass === 'function' && controllerClass.prototype) {
+        this.processControllerMethods(controllerClass, controllerId);
+      }
+    });
+  }
+
+  private processControllerMethods(controllerClass: Function, controllerId: string): void {
+    const prototype = controllerClass.prototype;
+    const methodNames = Object.getOwnPropertyNames(prototype).filter(
+      (name) => name !== 'constructor' && typeof prototype[name] === 'function',
+    );
+
+    methodNames.forEach((methodName) => {
+      const cleanMethodName = methodName.split('(')[0].trim();
+      const methodId = this.generateId('method', `${controllerId}.${cleanMethodName}`);
+
+      if (!this.builder.hasNode(methodId)) {
+        const method = prototype[methodName];
+        const methodInfo = {
+          id: methodId,
+          type: 'Method',
+          name: cleanMethodName,
+          properties: {
+            visibility: 'public',
+            level: 4,
+            returnType: 'unknown',
+            isAsync: method.constructor.name === 'AsyncFunction',
+            isEndpoint: true,
+          },
+        };
+
+        this.builder.addNode(methodInfo);
+        this.builder.addRelationship({
+          from: controllerId,
+          to: methodId,
+          type: 'HAS_METHOD',
+        });
+      }
     });
   }
 
   private processImports(imports: any[], moduleId: string): void {
     imports.forEach((imported) => {
-      const importedName = imported.toString().split('(')[0].trim();
+      let importedName = '';
+
+      if (typeof imported === 'string') {
+        importedName = imported;
+      } else if (typeof imported === 'function') {
+        importedName = imported.name;
+      } else if (imported && typeof imported === 'object') {
+        importedName = (imported.module?.toString() || imported.toString()).split('(')[0].trim();
+      }
+
       const importedId = this.generateId('module', importedName);
+
+      if (!this.builder.hasNode(importedId)) {
+        this.builder.addNode({
+          id: importedId,
+          type: 'Module',
+          name: importedName,
+          properties: {
+            level: 2,
+            isExternal: true,
+          },
+        });
+      }
 
       this.builder.addRelationship({
         from: moduleId,
