@@ -88,7 +88,7 @@ export class DecoratorProcessor extends BaseProcessor {
                     if (ts.isArrayLiteralExpression(prop.initializer)) {
                       config[propName] = prop.initializer.elements.map((e) => e.getText());
                     } else {
-                      config[propName] = prop.initializer.getText();
+                      config[propName] = prop.initializer.getText().replace(/['"]/g, '');
                     }
                   }
                 });
@@ -98,10 +98,8 @@ export class DecoratorProcessor extends BaseProcessor {
               if (ts.isStringLiteral(arg)) {
                 return arg.text;
               }
-              if (ts.isNumericLiteral(arg)) {
-                return Number(arg.text);
-              }
-              return arg.getText();
+
+              return arg.getText().replace(/['"]/g, '');
             });
 
             return {
@@ -109,18 +107,27 @@ export class DecoratorProcessor extends BaseProcessor {
               arguments: args,
             };
           } else {
+            let decoratorName = decorator.expression.getText();
+            decoratorName = decoratorName.replace('@', '');
+
+            // Handle special injection decorators
+            if (['Inject', 'Injectable', 'Controller', 'Service', 'Module'].includes(decoratorName)) {
+              return {
+                name: decoratorName,
+                arguments: [],
+              } as DecoratorMetadata;
+            }
+
             return {
-              name: decorator.expression.getText().replace('@', ''),
-            };
+              name: decoratorName,
+              arguments: [],
+            } as DecoratorMetadata;
           }
-        } catch (error: any) {
-          console.error(`Error processing decorator:`, error);
-          return {
-            name: 'unknown_decorator',
-            error: error?.message || 'Error desconocido',
-          };
+        } catch (error) {
+          console.error(`Error processing decorator: ${error}`);
+          return null;
         }
       })
-      .filter((dec) => dec.name !== 'unknown_decorator');
+      .filter((decorator): decorator is NonNullable<DecoratorMetadata> => decorator !== null && 'name' in decorator);
   }
 }

@@ -17,16 +17,18 @@ export class ClassProcessor extends BaseProcessor {
     const classId = this.generateId('class', className);
     const extractedDecorators = this.decoratorProcessor.extractDecorators(node);
     const isInjectable = extractedDecorators.some((d) => d.name === 'Injectable');
+    const isController = extractedDecorators.some((d) => d.name === 'Controller');
 
     this.builder.addNode({
       id: classId,
-      type: 'Class',
+      type: isController ? 'Controller' : 'Class',
       name: className,
       properties: {
         isAbstract: node.modifiers?.some((m) => m.kind === ts.SyntaxKind.AbstractKeyword) || false,
         documentation: this.getDocumentation(node),
         isInjectable,
-        level: isInjectable ? 4 : 5,
+        isController,
+        level: isController ? 2 : isInjectable ? 4 : 5,
       },
       decorators: extractedDecorators,
     });
@@ -45,7 +47,7 @@ export class ClassProcessor extends BaseProcessor {
 
     constructor.parameters.forEach((param) => {
       const paramDecorators = this.decoratorProcessor.extractDecorators(param);
-      const paramType = param.type ? param.type.getText() : undefined;
+      const paramType = param.type ? this.getTypeNameFromTypeNode(param.type) : undefined;
 
       if (!paramType) return;
 
@@ -79,6 +81,17 @@ export class ClassProcessor extends BaseProcessor {
         },
       });
     });
+  }
+
+  private getTypeNameFromTypeNode(typeNode: ts.TypeNode): string {
+    if (ts.isTypeReferenceNode(typeNode)) {
+      return typeNode.typeName.getText();
+    } else if (ts.isArrayTypeNode(typeNode)) {
+      return this.getTypeNameFromTypeNode(typeNode.elementType);
+    } else if (ts.isUnionTypeNode(typeNode)) {
+      return typeNode.types.map((t) => this.getTypeNameFromTypeNode(t)).join(' | ');
+    }
+    return typeNode.getText();
   }
 
   private processHeritageClauses(node: ts.ClassDeclaration, nodeId: string): void {
