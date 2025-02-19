@@ -84,17 +84,20 @@ export class ModuleProcessor extends BaseProcessor {
 
   private processControllers(controllers: any[], moduleId: string): void {
     controllers.forEach((controller) => {
-      const controllerName = controller.toString();
+      const controllerName =
+        typeof controller === 'function' ? controller.name : controller.toString().split('(')[0].trim();
       const controllerId = this.generateId('controller', controllerName);
 
-      this.builder.addNode({
-        id: controllerId,
-        type: 'Controller',
-        name: controllerName,
-        properties: {
-          level: 3,
-        },
-      });
+      if (!this.builder.hasNode(controllerId)) {
+        this.builder.addNode({
+          id: controllerId,
+          type: 'Controller',
+          name: controllerName,
+          properties: {
+            level: 3,
+          },
+        });
+      }
 
       this.builder.addRelationship({
         from: moduleId,

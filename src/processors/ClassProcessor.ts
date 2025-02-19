@@ -14,10 +14,10 @@ export class ClassProcessor extends BaseProcessor {
     if (!node.name) return;
 
     const className = node.name.getText();
-    const classId = this.generateId('class', className);
     const extractedDecorators = this.decoratorProcessor.extractDecorators(node);
-    const isInjectable = extractedDecorators.some((d) => d.name === 'Injectable');
     const isController = extractedDecorators.some((d) => d.name === 'Controller');
+    const classId = this.generateId(isController ? 'controller' : 'class', className);
+    const isInjectable = extractedDecorators.some((d) => d.name === 'Injectable');
 
     this.builder.addNode({
       id: classId,
