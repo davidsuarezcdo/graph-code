@@ -96,16 +96,18 @@ export class ModuleProcessor extends BaseProcessor {
     );
 
     methodNames.forEach((methodName) => {
-      const methodId = this.generateId('method', `${providerId}.${methodName}`);
+      const cleanMethodName = methodName.split('(')[0].trim();
+      const methodId = this.generateId('method', `${providerId}.${cleanMethodName}`);
 
       if (!this.builder.hasNode(methodId)) {
         this.builder.addNode({
           id: methodId,
           type: 'Method',
-          name: methodName,
+          name: cleanMethodName,
           properties: {
             visibility: 'public',
             level: 4,
+            returnType: 'unknown',
           },
         });
 

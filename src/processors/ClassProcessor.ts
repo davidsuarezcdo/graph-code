@@ -149,27 +149,30 @@ export class ClassProcessor extends BaseProcessor {
   private processMethod(node: ts.MethodDeclaration, classId: string): void {
     if (!node.name) return;
 
-    const methodName = node.name.getText();
+    const methodName = node.name.getText().split('(')[0].trim();
     const methodId = this.generateId('method', `${classId}.${methodName}`);
     const extractedDecorators = this.decoratorProcessor.extractDecorators(node);
 
-    this.builder.addNode({
-      id: methodId,
-      type: 'Method',
-      name: methodName,
-      properties: {
-        returnType: node.type ? node.type.getText() : 'void',
-        visibility: this.getVisibility(node),
-        documentation: this.getDocumentation(node),
-      },
-      decorators: extractedDecorators,
-    });
+    if (!this.builder.hasNode(methodId)) {
+      this.builder.addNode({
+        id: methodId,
+        type: 'Method',
+        name: methodName,
+        properties: {
+          returnType: node.type ? node.type.getText() : 'void',
+          visibility: this.getVisibility(node),
+          documentation: this.getDocumentation(node),
+          level: 4,
+        },
+        decorators: extractedDecorators,
+      });
 
-    this.builder.addRelationship({
-      from: classId,
-      to: methodId,
-      type: 'HAS_METHOD',
-    });
+      this.builder.addRelationship({
+        from: classId,
+        to: methodId,
+        type: 'HAS_METHOD',
+      });
+    }
   }
 
   private processProperty(node: ts.PropertyDeclaration, classId: string): void {

@@ -43,12 +43,23 @@ export class DecoratorProcessor extends BaseProcessor {
 
   private generateDecoratedNodeId(node: ts.Node): string | undefined {
     if (ts.isClassDeclaration(node) && node.name) {
-      return this.generateId('class', node.name.getText());
+      const className = node.name.getText();
+      const decorators = this.extractDecorators(node);
+      const isController = decorators.some((d) => d.name === 'Controller');
+      const isInjectable = decorators.some((d) => d.name === 'Injectable');
+      return this.generateId(isController ? 'controller' : isInjectable ? 'provider' : 'class', className);
     }
     if (ts.isMethodDeclaration(node) && node.name) {
       const parentClass = this.findParentClass(node);
       if (parentClass?.name) {
-        return this.generateId('method', `${parentClass.name.getText()}.${node.name.getText()}`);
+        const parentDecorators = this.extractDecorators(parentClass);
+        const isController = parentDecorators.some((d) => d.name === 'Controller');
+        const isInjectable = parentDecorators.some((d) => d.name === 'Injectable');
+        const parentId = this.generateId(
+          isController ? 'controller' : isInjectable ? 'provider' : 'class',
+          parentClass.name.getText(),
+        );
+        return this.generateId('method', `${parentId}.${node.name.getText().split('(')[0].trim()}`);
       }
     }
     if (ts.isPropertyDeclaration(node) && node.name) {
