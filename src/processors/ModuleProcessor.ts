@@ -302,31 +302,39 @@ export class ModuleProcessor extends BaseProcessor {
     );
 
     dynamicMethods.forEach((method) => {
-      const methodName = method.name.getText();
-      const dynamicConfigId = this.generateId('dynamic_config', `${node.name?.getText()}_${methodName}`);
+      const methodName = method.name.getText().split('(')[0].trim();
+      const methodId = this.generateId('method', `${moduleId}.${methodName}`);
 
-      this.builder.addNode({
-        id: dynamicConfigId,
-        type: 'DynamicModuleConfig',
-        name: `${node.name?.getText()}.${methodName}`,
-        properties: {
-          methodName,
-          returnType: method.type?.getText() || 'DynamicModule',
-          parameters: method.parameters.map((param) => ({
-            name: param.name.getText(),
-            type: param.type?.getText(),
-          })),
-        },
-      });
+      if (!this.builder.hasNode(methodId)) {
+        const methodInfo = {
+          id: methodId,
+          type: 'Method',
+          name: methodName,
+          properties: {
+            methodName,
+            returnType: method.type?.getText() || 'DynamicModule',
+            isDynamic: true,
+            isStatic: true,
+            level: 4,
+            parameters: method.parameters.map((param) => ({
+              name: param.name.getText().split('(')[0].trim(),
+              type: param.type?.getText(),
+            })),
+          },
+          decorators: this.decoratorProcessor.extractDecorators(method),
+        };
 
-      this.builder.addRelationship({
-        from: moduleId,
-        to: dynamicConfigId,
-        type: 'HAS_DYNAMIC_CONFIG',
-        properties: {
-          method: methodName,
-        },
-      });
+        this.builder.addNode(methodInfo);
+
+        this.builder.addRelationship({
+          from: moduleId,
+          to: methodId,
+          type: 'HAS_DYNAMIC_CONFIG',
+          properties: {
+            method: methodName,
+          },
+        });
+      }
     });
   }
 }

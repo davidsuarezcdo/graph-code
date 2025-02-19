@@ -106,32 +106,78 @@ export class ClassProcessor extends BaseProcessor {
       const isImplements = clause.token === ts.SyntaxKind.ImplementsKeyword;
 
       clause.types.forEach((type) => {
-        const baseTypeName = type.expression.getText();
-        const baseNodeType = isImplements ? 'interface' : 'class';
-        const baseTypeId = this.generateId(baseNodeType, baseTypeName);
+        const baseTypeName = type.expression.getText().split('<')[0].trim();
 
-        if (!this.builder.hasNode(baseTypeId)) {
-          this.builder.addNode({
-            id: baseTypeId,
-            type: baseNodeType === 'class' ? 'Class' : 'Interface',
-            name: baseTypeName,
+        // Si es una implementación, siempre es una interfaz
+        if (isImplements) {
+          const baseTypeId = this.generateId('interface', baseTypeName);
+
+          if (!this.builder.hasNode(baseTypeId)) {
+            this.builder.addNode({
+              id: baseTypeId,
+              type: 'Interface',
+              name: baseTypeName,
+              properties: {
+                level: 5,
+                isExternal: true,
+              },
+            });
+          }
+
+          this.builder.addRelationship({
+            from: nodeId,
+            to: baseTypeId,
+            type: 'IMPLEMENTS',
             properties: {
-              level: 5,
-              isExternal: true,
+              sourceType: this.builder.getNode(nodeId)?.type || 'Class',
+              targetType: 'Interface',
+              typeArguments: type.typeArguments?.map((arg) => arg.getText()) || [],
             },
           });
         }
+        // Si es una extensión, necesitamos verificar si la clase base es un Controller/Provider
+        else if (isExtends) {
+          // Intentamos encontrar la clase base como Controller
+          let baseTypeId = this.generateId('controller', baseTypeName);
+          let baseType = 'Controller';
 
-        this.builder.addRelationship({
-          from: nodeId,
-          to: baseTypeId,
-          type: isExtends ? 'EXTENDS' : 'IMPLEMENTS',
-          properties: {
-            sourceType: 'class',
-            targetType: baseNodeType,
-            typeArguments: type.typeArguments?.map((arg) => arg.getText()) || [],
-          },
-        });
+          // Si no existe como controller, intentamos como provider
+          if (!this.builder.hasNode(baseTypeId)) {
+            const providerId = this.generateId('provider', baseTypeName);
+            if (this.builder.hasNode(providerId)) {
+              baseTypeId = providerId;
+              baseType = 'Provider';
+            } else {
+              // Si no es ni controller ni provider, es una clase normal
+              baseTypeId = this.generateId('class', baseTypeName);
+              baseType = 'Class';
+
+              // Solo creamos el nodo si no existe en ninguna forma
+              if (!this.builder.hasNode(baseTypeId)) {
+                this.builder.addNode({
+                  id: baseTypeId,
+                  type: 'Class',
+                  name: baseTypeName,
+                  properties: {
+                    level: 5,
+                    isExternal: true,
+                  },
+                });
+              }
+            }
+          }
+
+          this.builder.addRelationship({
+            from: nodeId,
+            to: baseTypeId,
+            type: 'EXTENDS',
+            properties: {
+              sourceType: this.builder.getNode(nodeId)?.type || 'Class',
+              targetType: baseType,
+              typeArguments: type.typeArguments?.map((arg) => arg.getText()) || [],
+            },
+          });
+        }
       });
     });
   }
