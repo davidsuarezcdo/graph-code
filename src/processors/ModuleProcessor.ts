@@ -160,8 +160,39 @@ export class ModuleProcessor extends BaseProcessor {
 
   private processExports(exports: any[], moduleId: string): void {
     exports.forEach((exported) => {
-      const exportedName = exported.toString();
-      const exportedId = this.generateId('provider', exportedName);
+      let exportedName = '';
+      let exportedId = '';
+
+      if (typeof exported === 'string') {
+        exportedName = exported;
+      } else if (typeof exported === 'function') {
+        exportedName = exported.name;
+      } else if (exported && typeof exported === 'object') {
+        exportedName = (exported.provide?.toString() || exported.useClass?.name || exported.toString())
+          .split('<')[0]
+          .trim();
+      }
+
+      exportedId = this.generateId('provider', exportedName);
+
+      if (!this.builder.hasNode(exportedId)) {
+        const controllerId = this.generateId('controller', exportedName);
+        if (this.builder.hasNode(controllerId)) {
+          exportedId = controllerId;
+        } else {
+          this.builder.addNode({
+            id: exportedId,
+            type: 'Provider',
+            name: exportedName,
+            properties: {
+              scope: 'module',
+              level: 3,
+              isInjectable: true,
+              isExported: true,
+            },
+          });
+        }
+      }
 
       this.builder.addRelationship({
         from: moduleId,
