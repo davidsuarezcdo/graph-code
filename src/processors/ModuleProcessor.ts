@@ -26,8 +26,25 @@ export class ModuleProcessor extends BaseProcessor {
     this.processDynamicModuleMethods(node, moduleId);
   }
 
+  private cleanName(name: string): string {
+    // Si es un método dinámico (forRoot, forFeature, etc), devolver solo el nombre del módulo
+    const dynamicMethodMatch = name.match(/(.+)\.(forRoot|forFeature|register|for)\(/);
+    if (dynamicMethodMatch) {
+      return dynamicMethodMatch[1].trim();
+    }
+
+    // Si es una llamada a método sin parámetros, también devolver solo el nombre del módulo
+    const methodCallMatch = name.match(/(.+)\.(forRoot|forFeature|register|for)$/);
+    if (methodCallMatch) {
+      return methodCallMatch[1].trim();
+    }
+
+    // Limpiar parámetros genéricos y argumentos de función
+    return name.split(/[<(]/)[0].trim();
+  }
+
   private processModuleMetadata(moduleMetadata: ModuleDecoratorMetadata, moduleId: string, className: string): void {
-    const cleanClassName = className.split('<')[0].trim();
+    const cleanClassName = this.cleanName(className);
 
     if (!this.builder.hasNode(moduleId)) {
       this.builder.addNode({
@@ -35,18 +52,27 @@ export class ModuleProcessor extends BaseProcessor {
         type: 'Module',
         name: cleanClassName,
         properties: {
-          imports: moduleMetadata.imports?.map((imp) => (typeof imp === 'function' ? imp.name : imp.toString())) || [],
-          exports: moduleMetadata.exports?.map((exp) => (typeof exp === 'function' ? exp.name : exp.toString())) || [],
+          imports:
+            moduleMetadata.imports?.map((imp) => {
+              if (typeof imp === 'function') return imp.name;
+              return this.cleanName(imp.toString());
+            }) || [],
+          exports:
+            moduleMetadata.exports?.map((exp) =>
+              typeof exp === 'function' ? exp.name : this.cleanName(exp.toString()),
+            ) || [],
           providers:
             moduleMetadata.providers?.map((prov) =>
               typeof prov === 'function'
                 ? prov.name
                 : typeof prov === 'object'
-                ? prov.provide?.toString() || prov.useClass?.name || 'UnknownProvider'
-                : prov.toString(),
+                ? this.cleanName(prov.provide?.toString() || prov.useClass?.name || 'UnknownProvider')
+                : this.cleanName(prov.toString()),
             ) || [],
           controllers:
-            moduleMetadata.controllers?.map((ctrl) => (typeof ctrl === 'function' ? ctrl.name : ctrl.toString())) || [],
+            moduleMetadata.controllers?.map((ctrl) =>
+              typeof ctrl === 'function' ? ctrl.name : this.cleanName(ctrl.toString()),
+            ) || [],
           isGlobal: Boolean(moduleMetadata.global),
           level: cleanClassName === 'AppModule' ? 1 : 2,
         },
@@ -65,23 +91,22 @@ export class ModuleProcessor extends BaseProcessor {
       let providerClass = null;
 
       if (typeof provider === 'string') {
-        providerName = provider;
+        providerName = this.cleanName(provider);
       } else if (typeof provider === 'function') {
         providerName = provider.name;
         providerClass = provider;
       } else if (provider && typeof provider === 'object') {
         if (provider.useClass) {
-          providerName = provider.useClass.name;
+          providerName = this.cleanName(provider.useClass.name);
           providerClass = provider.useClass;
         } else if (provider.provide) {
-          providerName = provider.provide.toString();
+          providerName = this.cleanName(provider.provide.toString());
           if (typeof provider.useValue === 'function') {
             providerClass = provider.useValue;
           }
         } else {
           providerName = 'UnknownProvider_' + Math.random().toString(36).substr(2, 9);
         }
-        providerName = providerName.split('<')[0].trim();
       }
 
       const providerId = this.generateId('provider', providerName);
@@ -232,11 +257,11 @@ export class ModuleProcessor extends BaseProcessor {
       let importedName = '';
 
       if (typeof imported === 'string') {
-        importedName = imported;
+        importedName = this.cleanName(imported);
       } else if (typeof imported === 'function') {
         importedName = imported.name;
       } else if (imported && typeof imported === 'object') {
-        importedName = (imported.module?.toString() || imported.toString()).split('(')[0].trim();
+        importedName = this.cleanName(imported.module?.toString() || imported.toString());
       }
 
       const importedId = this.generateId('module', importedName);
@@ -275,13 +300,11 @@ export class ModuleProcessor extends BaseProcessor {
       let exportedId = '';
 
       if (typeof exported === 'string') {
-        exportedName = exported;
+        exportedName = this.cleanName(exported);
       } else if (typeof exported === 'function') {
         exportedName = exported.name;
       } else if (exported && typeof exported === 'object') {
-        exportedName = (exported.provide?.toString() || exported.useClass?.name || exported.toString())
-          .split('<')[0]
-          .trim();
+        exportedName = this.cleanName(exported.provide?.toString() || exported.useClass?.name || exported.toString());
       }
 
       exportedId = this.generateId('provider', exportedName);
