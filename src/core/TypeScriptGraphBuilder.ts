@@ -99,4 +99,8 @@ export class TypeScriptGraphBuilder {
   public getNode(id: string): GraphNode | undefined {
     return this.nodes.get(id);
   }
+
+  public hasRelationship(fromId: string, toId: string, type: string): boolean {
+    return this.relationships.some((rel) => rel.from === fromId && rel.to === toId && rel.type === type);
+  }
 }

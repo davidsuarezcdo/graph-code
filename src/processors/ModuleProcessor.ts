@@ -224,6 +224,10 @@ export class ModuleProcessor extends BaseProcessor {
   }
 
   private processImports(imports: any[], moduleId: string): void {
+    const currentModuleName = this.builder.getNode(moduleId)?.name;
+    const isAppModule = currentModuleName === 'AppModule';
+    const appModuleId = this.generateId('module', 'AppModule');
+
     imports.forEach((imported) => {
       let importedName = '';
 
@@ -254,6 +258,14 @@ export class ModuleProcessor extends BaseProcessor {
         to: importedId,
         type: 'IMPORTS',
       });
+
+      if (!isAppModule && !this.builder.hasRelationship(appModuleId, importedId, 'IMPORTS')) {
+        this.builder.addRelationship({
+          from: appModuleId,
+          to: importedId,
+          type: 'IMPORTS',
+        });
+      }
     });
   }
 
