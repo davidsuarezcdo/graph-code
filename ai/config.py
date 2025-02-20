@@ -12,7 +12,7 @@ class Neo4jConfig:
 @dataclass
 class OpenAIConfig:
     api_key: str
-    model_name: str = "gpt-4"
+    model_name: str = "gpt-4o"
     temperature: float = 0
 
 @dataclass
