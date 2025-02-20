@@ -10,7 +10,11 @@ export class Neo4jGraphBuilder {
   }
 
   async close() {
-    await this.neo4jService.close();
+    try {
+      await this.neo4jService.close();
+    } catch (error) {
+      console.error('Error al cerrar la conexión con Neo4j:', error instanceof Error ? error.message : error);
+    }
   }
 
   async clearDatabase() {

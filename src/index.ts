@@ -77,11 +77,7 @@ async function main(): Promise<void> {
     console.error('Error durante la ejecución:', error instanceof Error ? error.message : error);
     process.exit(1);
   } finally {
-    try {
-      await neo4jBuilder?.close();
-    } catch (error) {
-      console.error('Error al cerrar la conexión con Neo4j:', error instanceof Error ? error.message : error);
-    }
+    await neo4jBuilder?.close();
   }
 }
 
