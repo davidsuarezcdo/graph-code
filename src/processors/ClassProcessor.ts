@@ -200,32 +200,117 @@ export class ClassProcessor extends BaseProcessor {
   }
 
   private processMethod(node: ts.MethodDeclaration, classId: string): void {
-    if (!node.name) return;
-
-    const methodName = node.name.getText().split('(')[0].trim();
+    const methodName = node.name.getText();
     const methodId = this.generateId('method', `${classId}.${methodName}`);
-    const extractedDecorators = this.decoratorProcessor.extractDecorators(node);
+    const visibility = this.getVisibility(node);
+    const returnType = node.type ? node.type.getText() : 'void';
+    const isAsync = node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.AsyncKeyword) || false;
+    const isStatic = node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.StaticKeyword) || false;
+    const isAbstract = node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.AbstractKeyword) || false;
 
+    // Procesar parámetros
+    const parameters = node.parameters.map((param) => ({
+      name: param.name.getText(),
+      type: param.type ? param.type.getText() : 'any',
+      isOptional: param.questionToken !== undefined || param.initializer !== undefined,
+      defaultValue: param.initializer ? param.initializer.getText() : undefined,
+    }));
+
+    // Verificar si el nodo ya existe antes de crearlo
     if (!this.builder.hasNode(methodId)) {
+      // Crear nodo de método
       this.builder.addNode({
         id: methodId,
-        type: 'Method',
         name: methodName,
+        type: 'Method',
         properties: {
-          returnType: node.type ? node.type.getText() : 'void',
-          visibility: this.getVisibility(node),
+          visibility,
+          returnType,
+          parameterCount: parameters.length,
+          parameterTypes: parameters.map((p) => p.type),
+          parameterNames: parameters.map((p) => p.name),
+          parameterOptional: parameters.map((p) => p.isOptional),
+          parameterDefaultValues: parameters.map((p) => p.defaultValue || null),
+          isAsync,
+          isStatic,
+          isAbstract,
           documentation: this.getDocumentation(node),
-          level: 4,
+          callCount: 0, // Inicializar contador de llamadas
         },
-        decorators: extractedDecorators,
       });
 
+      // Crear relación con la clase
       this.builder.addRelationship({
         from: classId,
         to: methodId,
         type: 'HAS_METHOD',
       });
+
+      // Procesar parámetros como nodos separados
+      parameters.forEach((param, index) => {
+        const paramId = this.generateId('parameter', `${methodId}_${param.name}`);
+        this.builder.addNode({
+          id: paramId,
+          name: param.name,
+          type: 'Parameter',
+          properties: {
+            type: param.type,
+            isOptional: param.isOptional,
+            defaultValue: param.defaultValue || null,
+            index,
+          },
+        });
+
+        this.builder.addRelationship({
+          from: methodId,
+          to: paramId,
+          type: 'HAS_PARAMETER',
+          properties: {
+            index,
+          },
+        });
+      });
     }
+
+    // Procesar llamadas a métodos dentro del cuerpo del método
+    if (node.body) {
+      this.processMethodCalls(node.body, methodId);
+    }
+  }
+
+  private processMethodCalls(node: ts.Node, sourceMethodId: string): void {
+    if (ts.isCallExpression(node)) {
+      let targetMethod: string | undefined;
+
+      // Identificar el método llamado
+      if (ts.isPropertyAccessExpression(node.expression)) {
+        targetMethod = node.expression.name.getText();
+      } else if (ts.isIdentifier(node.expression)) {
+        targetMethod = node.expression.getText();
+      }
+
+      if (targetMethod) {
+        // Buscar el método en el grafo y crear/actualizar la relación CALLS
+        const targetMethodNode = this.findMethodInGraph(targetMethod);
+        if (targetMethodNode) {
+          this.builder.addRelationship({
+            from: sourceMethodId,
+            to: targetMethodNode,
+            type: 'CALLS',
+            properties: {
+              callCount: 1, // Incrementar en caso de llamadas múltiples
+            },
+          });
+        }
+      }
+    }
+
+    // Recursivamente procesar todos los nodos hijos
+    node.forEachChild((child) => this.processMethodCalls(child, sourceMethodId));
+  }
+
+  private findMethodInGraph(methodName: string): string | undefined {
+    return this.builder.findMethodByName(methodName);
   }
 
   private processProperty(node: ts.PropertyDeclaration, classId: string): void {

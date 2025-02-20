@@ -8,7 +8,7 @@ import { DecoratorProcessor } from '../processors/DecoratorProcessor';
 
 export class TypeScriptGraphBuilder {
   private nodes: Map<string, GraphNode> = new Map();
-  private relationships: GraphRelationship[] = [];
+  private relationships: Map<string, GraphRelationship> = new Map();
   private typeChecker: ts.TypeChecker | undefined;
   private processors: {
     classProcessor: ClassProcessor;
@@ -16,6 +16,7 @@ export class TypeScriptGraphBuilder {
     interfaceProcessor: InterfaceProcessor;
     decoratorProcessor: DecoratorProcessor;
   };
+  private methodNameIndex: Map<string, string> = new Map();
 
   constructor() {
     this.processors = {
@@ -57,7 +58,7 @@ export class TypeScriptGraphBuilder {
 
     return {
       nodes: Array.from(this.nodes.values()),
-      relationships: this.relationships,
+      relationships: Array.from(this.relationships.values()),
     };
   }
 
@@ -82,14 +83,21 @@ export class TypeScriptGraphBuilder {
 
   public addNode(node: GraphNode): void {
     this.nodes.set(node.id, node);
+    if (node.type === 'Method') {
+      this.methodNameIndex.set(node.name, node.id);
+    }
   }
 
-  public addRelationship(relationship: GraphRelationship): void {
-    this.relationships.push(relationship);
+  public findMethodByName(methodName: string): string | undefined {
+    return this.methodNameIndex.get(methodName);
   }
 
-  public getTypeChecker(): ts.TypeChecker | undefined {
-    return this.typeChecker;
+  public updateMethodCallCount(methodId: string): void {
+    const node = this.nodes.get(methodId);
+    if (node && node.type === 'Method') {
+      node.properties = node.properties || {};
+      node.properties.callCount = (node.properties.callCount || 0) + 1;
+    }
   }
 
   public hasNode(id: string): boolean {
@@ -100,7 +108,28 @@ export class TypeScriptGraphBuilder {
     return this.nodes.get(id);
   }
 
+  public addRelationship(relationship: GraphRelationship): void {
+    const id = `${relationship.from}_${relationship.type}_${relationship.to}`;
+
+    if (relationship.type === 'CALLS') {
+      const existingRel = this.relationships.get(id);
+      if (existingRel) {
+        existingRel.properties = existingRel.properties || {};
+        existingRel.properties.callCount = (existingRel.properties.callCount || 0) + 1;
+        this.updateMethodCallCount(relationship.to);
+        return;
+      }
+    }
+
+    this.relationships.set(id, relationship);
+  }
+
+  public getTypeChecker(): ts.TypeChecker | undefined {
+    return this.typeChecker;
+  }
+
   public hasRelationship(fromId: string, toId: string, type: string): boolean {
-    return this.relationships.some((rel) => rel.from === fromId && rel.to === toId && rel.type === type);
+    const relationship = this.relationships.get(`${fromId}_${type}_${toId}`);
+    return !!relationship;
   }
 }

@@ -55,6 +55,13 @@ export class Neo4jGraphBuilder {
       await session.run('CREATE INDEX provider_name IF NOT EXISTS FOR (n:Provider) ON (n.name)');
       await session.run('CREATE INDEX controller_name IF NOT EXISTS FOR (n:Controller) ON (n.name)');
 
+      // Nuevos índices para métodos y parámetros
+      await session.run('CREATE INDEX method_name IF NOT EXISTS FOR (n:Method) ON (n.name)');
+      await session.run('CREATE INDEX method_visibility IF NOT EXISTS FOR (n:Method) ON (n.visibility)');
+      await session.run('CREATE INDEX method_params IF NOT EXISTS FOR (n:Parameter) ON (n.name)');
+      await session.run('CREATE INDEX method_return_type IF NOT EXISTS FOR (n:Method) ON (n.returnType)');
+      await session.run('CREATE INDEX method_calls IF NOT EXISTS FOR ()-[r:CALLS]-() ON (r.callCount)');
+
       // Índices para módulos dinámicos
       await session.run('CREATE INDEX dynamic_module IF NOT EXISTS FOR (n:Module) ON (n.isDynamic)');
       await session.run('CREATE INDEX dynamic_config IF NOT EXISTS FOR (n:DynamicModuleConfig) ON (n.methodName)');
@@ -227,7 +234,15 @@ export class Neo4jGraphBuilder {
         if (typeof value === 'boolean') {
           properties[key] = value;
         } else if (Array.isArray(value)) {
-          properties[key] = value.map((item) => (typeof item === 'object' ? JSON.stringify(item) : String(item)));
+          // Filtrar valores nulos y convertir a tipos primitivos
+          properties[key] = value
+            .filter((item) => item !== null && item !== undefined)
+            .map((item) => {
+              if (typeof item === 'object') {
+                return JSON.stringify(item);
+              }
+              return String(item);
+            });
         } else if (typeof value === 'object') {
           properties[key] = JSON.stringify(value);
         } else {
@@ -239,7 +254,7 @@ export class Neo4jGraphBuilder {
     // Procesar decoradores
     if (node.decorators?.length > 0) {
       properties.decorators = this.formatDecorators(node.decorators);
-      properties.decoratorNames = node.decorators.map((d: any) => String(d.name));
+      properties.decoratorNames = node.decorators.filter((d: any) => d && d.name).map((d: any) => String(d.name));
     }
 
     // Propiedades específicas por tipo de nodo
@@ -249,12 +264,25 @@ export class Neo4jGraphBuilder {
         properties.exportCount = Number(node.properties?.exports?.length || 0);
         properties.providerCount = Number(node.properties?.providers?.length || 0);
         properties.controllerCount = Number(node.properties?.controllers?.length || 0);
-        // Convertir arrays a strings
-        if (node.properties?.imports) properties.imports = node.properties.imports.map(String);
-        if (node.properties?.exports) properties.exports = node.properties.exports.map(String);
-        if (node.properties?.providers) properties.providers = node.properties.providers.map(String);
-        if (node.properties?.controllers) properties.controllers = node.properties.controllers.map(String);
-        // Asegurar que isGlobal y isDynamic sean booleanos
+
+        // Filtrar y convertir arrays
+        if (node.properties?.imports?.length) {
+          properties.imports = node.properties.imports.filter((i: any) => i !== null && i !== undefined).map(String);
+        }
+        if (node.properties?.exports?.length) {
+          properties.exports = node.properties.exports.filter((e: any) => e !== null && e !== undefined).map(String);
+        }
+        if (node.properties?.providers?.length) {
+          properties.providers = node.properties.providers
+            .filter((p: any) => p !== null && p !== undefined)
+            .map(String);
+        }
+        if (node.properties?.controllers?.length) {
+          properties.controllers = node.properties.controllers
+            .filter((c: any) => c !== null && c !== undefined)
+            .map(String);
+        }
+
         properties.isGlobal = Boolean(node.properties?.isGlobal);
         properties.isDynamic = Boolean(node.properties?.isDynamic);
         break;
@@ -272,6 +300,45 @@ export class Neo4jGraphBuilder {
       case 'Dependency':
         properties.isOptional = Boolean(node.properties?.isOptional);
         properties.injectionType = String(node.properties?.injectionType || 'constructor');
+        break;
+      case 'Method':
+        properties.visibility = String(node.properties?.visibility || 'public');
+        properties.returnType = String(node.properties?.returnType || 'void');
+        properties.parameterCount = Number(node.properties?.parameterCount || 0);
+
+        // Manejar arrays de parámetros, filtrando valores nulos
+        const paramTypes = (node.properties?.parameterTypes || [])
+          .filter((t) => t !== null && t !== undefined)
+          .map(String);
+        const paramNames = (node.properties?.parameterNames || [])
+          .filter((n) => n !== null && n !== undefined)
+          .map(String);
+        const paramOptional = (node.properties?.parameterOptional || [])
+          .filter((o) => o !== null && o !== undefined)
+          .map(Boolean);
+        const paramDefaults = (node.properties?.parameterDefaultValues || [])
+          .filter((v) => v !== null && v !== undefined)
+          .map(String);
+
+        // Solo guardar arrays no vacíos
+        if (paramTypes.length > 0) properties.parameterTypes = paramTypes;
+        if (paramNames.length > 0) properties.parameterNames = paramNames;
+        if (paramOptional.length > 0) properties.parameterOptional = paramOptional;
+        if (paramDefaults.length > 0) properties.parameterDefaultValues = paramDefaults;
+
+        properties.isAsync = Boolean(node.properties?.isAsync);
+        properties.isStatic = Boolean(node.properties?.isStatic);
+        properties.isAbstract = Boolean(node.properties?.isAbstract);
+        properties.callCount = Number(node.properties?.callCount || 0);
+        break;
+      case 'Parameter':
+        properties.type = String(node.properties?.type || 'any');
+        properties.isOptional = Boolean(node.properties?.isOptional);
+        // Solo guardar defaultValue si no es nulo
+        if (node.properties?.defaultValue) {
+          properties.defaultValue = String(node.properties.defaultValue);
+        }
+        properties.index = Number(node.properties?.index || 0);
         break;
     }
 
