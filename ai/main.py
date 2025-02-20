@@ -50,7 +50,6 @@ def connect_database():
         db_manager = st.session_state['db_manager']
         try:
             db_manager.connect()
-            st.sidebar.success("Connected to Neo4j database.")
             
             # Initialize vector store
             db_manager.initialize_vector_store(st.session_state['embeddings'])
