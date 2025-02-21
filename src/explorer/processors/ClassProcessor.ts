@@ -1,13 +1,19 @@
 import ts from 'typescript';
 import { BaseProcessor } from './BaseProcessor';
 import { DecoratorProcessor } from './DecoratorProcessor';
+import { PropertyAnalyzer } from '../services/PropertyAnalyzer';
+import { MethodAnalyzer } from '../services/MethodAnalyzer';
 
 export class ClassProcessor extends BaseProcessor {
   private decoratorProcessor: DecoratorProcessor;
+  private propertyAnalyzer: PropertyAnalyzer;
+  private methodAnalyzer: MethodAnalyzer;
 
   constructor(builder: any) {
     super(builder);
     this.decoratorProcessor = new DecoratorProcessor(builder);
+    this.propertyAnalyzer = new PropertyAnalyzer(builder);
+    this.methodAnalyzer = new MethodAnalyzer(builder);
   }
 
   public process(node: ts.ClassDeclaration): void {
@@ -39,6 +45,16 @@ export class ClassProcessor extends BaseProcessor {
     this.processConstructorInjections(node, classId);
     this.processHeritageClauses(node, classId);
     this.processMembers(node, classId);
+  }
+
+  private processMembers(node: ts.ClassDeclaration, classId: string): void {
+    node.members.forEach((member) => {
+      if (ts.isMethodDeclaration(member)) {
+        this.methodAnalyzer.analyzeClassMethod(member, classId);
+      } else if (ts.isPropertyDeclaration(member)) {
+        this.propertyAnalyzer.analyzeClassProperty(member, classId);
+      }
+    });
   }
 
   private processConstructorInjections(node: ts.ClassDeclaration, classId: string): void {
@@ -187,161 +203,5 @@ export class ClassProcessor extends BaseProcessor {
         }
       });
     });
-  }
-
-  private processMembers(node: ts.ClassDeclaration, classId: string): void {
-    node.members.forEach((member) => {
-      if (ts.isMethodDeclaration(member)) {
-        this.processMethod(member, classId);
-      } else if (ts.isPropertyDeclaration(member)) {
-        this.processProperty(member, classId);
-      }
-    });
-  }
-
-  private processMethod(node: ts.MethodDeclaration, classId: string): void {
-    const methodName = node.name.getText();
-    const methodId = this.generateId('method', `${classId}.${methodName}`);
-    const visibility = this.getVisibility(node);
-    const returnType = node.type ? node.type.getText() : 'void';
-    const isAsync = node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.AsyncKeyword) || false;
-    const isStatic = node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.StaticKeyword) || false;
-    const isAbstract = node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.AbstractKeyword) || false;
-
-    // Procesar parámetros
-    const parameters = node.parameters.map((param) => ({
-      name: param.name.getText(),
-      type: param.type ? param.type.getText() : 'any',
-      isOptional: param.questionToken !== undefined || param.initializer !== undefined,
-      defaultValue: param.initializer ? param.initializer.getText() : undefined,
-    }));
-
-    // Verificar si el nodo ya existe antes de crearlo
-    if (!this.builder.hasNode(methodId)) {
-      // Crear nodo de método
-      this.builder.addNode({
-        id: methodId,
-        name: methodName,
-        type: 'Method',
-        properties: {
-          visibility,
-          returnType,
-          parameterCount: parameters.length,
-          parameterTypes: parameters.map((p) => p.type),
-          parameterNames: parameters.map((p) => p.name),
-          parameterOptional: parameters.map((p) => p.isOptional),
-          parameterDefaultValues: parameters.map((p) => p.defaultValue || null),
-          isAsync,
-          isStatic,
-          isAbstract,
-          documentation: this.getDocumentation(node),
-          callCount: 0, // Inicializar contador de llamadas
-        },
-      });
-
-      // Crear relación con la clase
-      this.builder.addRelationship({
-        from: classId,
-        to: methodId,
-        type: 'HAS_METHOD',
-      });
-
-      // Procesar parámetros como nodos separados
-      parameters.forEach((param, index) => {
-        const paramId = this.generateId('parameter', `${methodId}_${param.name}`);
-        this.builder.addNode({
-          id: paramId,
-          name: param.name,
-          type: 'Parameter',
-          properties: {
-            type: param.type,
-            isOptional: param.isOptional,
-            defaultValue: param.defaultValue || null,
-            index,
-          },
-        });
-
-        this.builder.addRelationship({
-          from: methodId,
-          to: paramId,
-          type: 'HAS_PARAMETER',
-          properties: {
-            index,
-          },
-        });
-      });
-    }
-
-    // Procesar llamadas a métodos dentro del cuerpo del método
-    if (node.body) {
-      this.processMethodCalls(node.body, methodId);
-    }
-  }
-
-  private processMethodCalls(node: ts.Node, sourceMethodId: string): void {
-    if (ts.isCallExpression(node)) {
-      let targetMethod: string | undefined;
-
-      // Identificar el método llamado
-      if (ts.isPropertyAccessExpression(node.expression)) {
-        targetMethod = node.expression.name.getText();
-      } else if (ts.isIdentifier(node.expression)) {
-        targetMethod = node.expression.getText();
-      }
-
-      if (targetMethod) {
-        // Buscar el método en el grafo y crear/actualizar la relación CALLS
-        const targetMethodNode = this.findMethodInGraph(targetMethod);
-        if (targetMethodNode) {
-          this.builder.addRelationship({
-            from: sourceMethodId,
-            to: targetMethodNode,
-            type: 'CALLS',
-            properties: {
-              callCount: 1, // Incrementar en caso de llamadas múltiples
-            },
-          });
-        }
-      }
-    }
-
-    // Recursivamente procesar todos los nodos hijos
-    node.forEachChild((child) => this.processMethodCalls(child, sourceMethodId));
-  }
-
-  private findMethodInGraph(methodName: string): string | undefined {
-    return this.builder.findMethodByName(methodName);
-  }
-
-  private processProperty(node: ts.PropertyDeclaration, classId: string): void {
-    if (!node.name) return;
-
-    const propertyName = node.name.getText().split('(')[0].trim();
-    const propertyId = this.generateId('property', `${classId}.${propertyName}`);
-    const extractedDecorators = this.decoratorProcessor.extractDecorators(node);
-    const propertyType = node.type ? this.getTypeNameFromTypeNode(node.type) : 'any';
-
-    if (!this.builder.hasNode(propertyId)) {
-      this.builder.addNode({
-        id: propertyId,
-        type: 'Property',
-        name: propertyName,
-        properties: {
-          type: propertyType,
-          visibility: this.getVisibility(node),
-          level: 5,
-          isStatic: node.modifiers?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword) || false,
-          isReadonly: node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword) || false,
-          documentation: this.getDocumentation(node),
-        },
-        decorators: extractedDecorators,
-      });
-
-      this.builder.addRelationship({
-        from: classId,
-        to: propertyId,
-        type: 'HAS_PROPERTY',
-      });
-    }
   }
 }
