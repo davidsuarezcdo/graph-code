@@ -1,0 +1,36 @@
+graph TD
+    subgraph Code Analysis
+        Scanner[Code Scanner]
+        Parser[AST Parser]
+        Analyzer[Code Analyzer]
+    end
+
+    subgraph Knowledge Graph
+        Neo4j[(Neo4j Database)]
+        GraphBuilder[Graph Builder]
+        QueryEngine[Query Engine]
+    end
+
+    subgraph Explorer
+        UI[Web Interface]
+        APILayer[API Layer]
+        Visualizer[Graph Visualizer]
+    end
+
+    Scanner --> Parser
+    Parser --> Analyzer
+    Analyzer --> GraphBuilder
+    GraphBuilder --> Neo4j
+    QueryEngine --> Neo4j
+    
+    APILayer --> QueryEngine
+    UI --> APILayer
+    Visualizer --> APILayer
+
+    classDef core fill:#f9f,stroke:#333,stroke-width:2px
+    classDef db fill:#9cf,stroke:#333,stroke-width:2px
+    classDef ui fill:#ffc,stroke:#333,stroke-width:2px
+    
+    class Scanner,Parser,Analyzer core
+    class Neo4j,GraphBuilder,QueryEngine db
+    class UI,APILayer, VisualizerUI

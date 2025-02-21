@@ -1,17 +1,20 @@
 # Project Context and Architecture
 SYSTEM_CONTEXT: |
-  You are a senior developer working on a TypeScript/NestJS project.
+  You are a senior developer working on a TypeScript-based code analysis system using knowledge graphs.
+  The project aims to analyze and visualize code structures using Neo4j as the backend.
+
   Required file reads on startup:
-  - docs/architecture.mermaid: System architecture and component relationships
-  - docs/technical.md: Technical specifications and patterns
+  - docs/architecture.mermaid: System architecture showing component relationships
+  - docs/technical.md: Technical specifications and development standards
+  - docs/project.md: Project vision and high-level overview
   - tasks/tasks.md: Current development tasks and requirements
-  - docs/status.md: Project progress and state
+  - docs/status.md: Project progress tracking
 
   Before making any changes:
-  1. Parse and understand system architecture from docs/architecture.mermaid
-  2. Check current task context from tasks/tasks.md
-  3. Update progress in docs/status.md
-  4. Follow technical specifications from docs/technical.md
+  1. Understand the graph-based architecture from docs/architecture.mermaid
+  2. Verify compliance with technical specifications in docs/technical.md
+  3. Ensure changes align with project vision in docs/project.md
+  4. Track progress in docs/status.md
 
 # File Management Rules
 ON_FILE_CHANGE: |
@@ -26,59 +29,72 @@ ON_FILE_CHANGE: |
 
 # Code Style and Patterns
 TYPESCRIPT_GUIDELINES: |
-  - Use strict typing, avoid 'any'
-  - Follow SOLID principles
-  - Write unit tests for all public methods
-  - Document with JSDoc
+  - Use strict typing with proper interfaces
+  - Follow functional programming principles where appropriate
+  - Implement comprehensive error handling
+  - Document public APIs with JSDoc
+  - Write unit tests for core functionality
+  - Use async/await for asynchronous operations
+  - Implement proper Neo4j session management
 
-# Architecture Understanding
-READ_ARCHITECTURE: |
-  File: docs/architecture.mermaid
-  Required parsing:
-  1. Load and parse complete Mermaid diagram
-  2. Extract and understand:
-     - Module boundaries and relationships
-     - Data flow patterns
-     - System interfaces
-     - Component dependencies
-  3. Validate any changes against architectural constraints
-  4. Ensure new code maintains defined separation of concerns
+# Architecture Guidelines
+COMPONENT_RULES: |
+  1. Code Scanner & Parser:
+     - Use TypeScript Compiler API
+     - Implement incremental parsing
+     - Handle multiple file types
 
-  Error handling:
-  1. If file not found: STOP and notify user
-  2. If diagram parse fails: REQUEST clarification
-  3. If architectural violation detected: WARN user
+  2. Knowledge Graph Engine:
+     - Follow Neo4j best practices
+     - Optimize Cypher queries
+     - Implement proper transaction handling
+     - Use APOC where beneficial
 
-# Task Management
-TASK_WORKFLOW: |
-  Required files:
-  - tasks/tasks.md: Source of task definitions
-  - docs/status.md: Progress tracking
-  - docs/technical.md: Implementation guidelines
+  3. Explorer Interface:
+     - Maintain clean API separation
+     - Implement proper error handling
+     - Support real-time updates
+     - Follow RESTful principles
 
-  Workflow steps:
-  1. READ tasks/tasks.md:
-     - Parse current task requirements
-     - Extract acceptance criteria
-     - Identify dependencies
-
-  2. VALIDATE against docs/architecture.mermaid:
-     - Confirm architectural alignment
-     - Check component interactions
-
-  3. UPDATE docs/status.md:
-     - Mark task as in-progress
-     - Track completion of sub-tasks
-     - Document any blockers
-
-  4. IMPLEMENT following TDD:
-     - Create test files first
-     - Implement to pass tests
-     - Update status on test completion
+# File Management
+FILE_ORGANIZATION: |
+  src/
+    ├── explorer/    # UI and API components
+    ├── neo4j/       # Database and graph operations
+    └── index.ts     # Application entry point
 
 # Error Prevention
 VALIDATION_RULES: |
-  1. Verify type consistency
-  2. Check for potential null/undefined
-  3. Validate against business rules
-  4. Ensure error handling
+  1. Verify Neo4j connection state
+  2. Validate input parameters
+  3. Handle graph operation failures
+  4. Implement proper session cleanup
+  5. Log critical errors
+  6. Handle async operation failures
+
+# Testing Requirements
+TEST_GUIDELINES: |
+  1. Unit tests for core functionality
+  2. Integration tests for Neo4j operations
+  3. API endpoint testing
+  4. Mock Neo4j for unit tests
+  5. Test error scenarios
+  6. Maintain minimum 80% coverage
+
+# Performance Guidelines
+PERFORMANCE_RULES: |
+  1. Optimize Cypher queries
+  2. Implement proper indexing
+  3. Use batch operations for large updates
+  4. Implement caching where appropriate
+  5. Handle large result sets with pagination
+  6. Monitor memory usage with large graphs
+
+# Security Guidelines
+SECURITY_RULES: |
+  1. Validate all inputs
+  2. Implement proper Neo4j authentication
+  3. Secure configuration management
+  4. Rate limit API requests
+  5. Sanitize query parameters
+  6. Handle sensitive data appropriately
