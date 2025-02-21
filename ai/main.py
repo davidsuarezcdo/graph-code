@@ -107,15 +107,12 @@ def main():
     if connect_database():
         display_example_questions()
         
-        # Create question form with improved layout
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            question = st.text_input(
-                "Enter your question about the codebase:",
-                placeholder="e.g., What are the most called methods?"
-            )
-        with col2:
-            analyze_button = st.button('Analyze', type='primary')
+        # Create question input
+        question = st.text_input(
+            "Enter your question about the codebase:",
+            placeholder="e.g., What are the most called methods?"
+        )
+        analyze_button = st.button('Analyze', type='primary')
         
         if analyze_button and question:
             handle_question(question)
