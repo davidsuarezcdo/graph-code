@@ -1,32 +1,9 @@
+import { GraphRelationship, RelationshipProperties, GraphNode, NodeProperties } from '../../shared/types/graph.types';
+
 export interface Neo4jConfig {
   uri: string;
   username: string;
   password: string;
-}
-
-export interface NodeProperties {
-  id: string;
-  name: string;
-  [key: string]: any;
-}
-
-export interface RelationshipProperties {
-  [key: string]: any;
-}
-
-export interface GraphNode {
-  id: string;
-  name: string;
-  type: string;
-  properties?: any;
-  decorators?: any[];
-}
-
-export interface GraphRelationship {
-  from: string;
-  to: string;
-  type: string;
-  properties?: RelationshipProperties;
 }
 
 export interface GraphStatistics {

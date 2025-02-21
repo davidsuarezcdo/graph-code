@@ -1,5 +1,6 @@
 import neo4j, { Driver, Session } from 'neo4j-driver';
-import { Neo4jConfig, GraphNode, GraphRelationship, GraphStatistics } from '../interfaces/neo4j-config.interface';
+import { Neo4jConfig, GraphStatistics } from '../interfaces/neo4j-config.interface';
+import { GraphRelationship, GraphNode } from '../../shared/types/graph.types';
 import { PropertyBuilder } from '../builders/property-builder';
 import { PropertyFormatter } from '../utils/property-formatter';
 import { NEO4J_INDICES } from '../constants/indices.constants';

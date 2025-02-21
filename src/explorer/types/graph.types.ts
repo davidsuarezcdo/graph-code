@@ -1,19 +1,6 @@
 import ts from 'typescript';
 import { DecoratorMetadata } from './decorators.types';
-export interface GraphNode {
-  id: string;
-  type: string;
-  name: string;
-  properties?: Record<string, any>;
-  decorators?: DecoratorMetadata[];
-}
-
-export interface GraphRelationship {
-  from: string;
-  to: string;
-  type: string;
-  properties?: Record<string, any>;
-}
+import { GraphRelationship, GraphNode } from '../../shared/types/graph.types';
 
 export interface GraphData {
   nodes: GraphNode[];

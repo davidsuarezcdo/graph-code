@@ -1,6 +1,7 @@
 import ts from 'typescript';
 import * as path from 'path';
-import { GraphData, GraphNode, GraphRelationship } from '../types/graph.types';
+import { GraphNode, GraphRelationship } from '../../shared/types/graph.types';
+import { GraphData } from '../types/graph.types';
 import { ClassProcessor } from '../processors/ClassProcessor';
 import { ModuleProcessor } from '../processors/ModuleProcessor';
 import { InterfaceProcessor } from '../processors/InterfaceProcessor';

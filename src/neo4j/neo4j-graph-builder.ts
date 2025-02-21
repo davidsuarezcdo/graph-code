@@ -1,5 +1,6 @@
 import { Neo4jService } from './services/neo4j.service';
-import { Neo4jConfig, GraphNode, GraphRelationship, GraphStatistics } from './interfaces/neo4j-config.interface';
+import { Neo4jConfig, GraphStatistics } from './interfaces/neo4j-config.interface';
+import { GraphRelationship, GraphNode } from '../shared/types/graph.types';
 
 export class Neo4jGraphBuilder {
   private neo4jService: Neo4jService;
