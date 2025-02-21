@@ -1,6 +1,7 @@
 import ts from 'typescript';
 import { BaseProcessor } from './BaseProcessor';
 import { DecoratorMetadata } from '../types/decorators.types';
+import { NodeLevel } from '../constants/NodeLevels';
 
 export class DecoratorProcessor extends BaseProcessor {
   public process(node: ts.Node): void {
@@ -23,7 +24,7 @@ export class DecoratorProcessor extends BaseProcessor {
           type: 'Decorator',
           name: decorator.name,
           properties: {
-            level: 6,
+            level: NodeLevel.DECORATOR,
             hasArguments: decorator.arguments ? decorator.arguments.length > 0 : false,
           },
         });

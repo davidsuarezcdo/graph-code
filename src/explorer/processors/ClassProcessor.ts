@@ -3,6 +3,7 @@ import { BaseProcessor } from './BaseProcessor';
 import { DecoratorProcessor } from './DecoratorProcessor';
 import { PropertyAnalyzer } from '../services/PropertyAnalyzer';
 import { MethodAnalyzer } from '../services/MethodAnalyzer';
+import { NodeLevel } from '../constants/NodeLevels';
 
 export class ClassProcessor extends BaseProcessor {
   private decoratorProcessor: DecoratorProcessor;
@@ -36,7 +37,7 @@ export class ClassProcessor extends BaseProcessor {
         documentation: this.getDocumentation(node),
         isInjectable,
         isController,
-        level: isController ? 2 : isInjectable ? 3 : 5,
+        level: isController ? NodeLevel.CONTROLLER : isInjectable ? NodeLevel.PROVIDER : NodeLevel.CLASS,
         scope: isInjectable ? 'module' : undefined,
       },
       decorators: extractedDecorators,
@@ -83,7 +84,7 @@ export class ClassProcessor extends BaseProcessor {
           properties: {
             isInjectable: true,
             scope: 'module',
-            level: 3,
+            level: NodeLevel.PROVIDER,
           },
         });
       }
@@ -141,7 +142,7 @@ export class ClassProcessor extends BaseProcessor {
               type: 'Interface',
               name: baseTypeName,
               properties: {
-                level: 5,
+                level: NodeLevel.INTERFACE,
                 isExternal: true,
               },
             });
@@ -182,7 +183,7 @@ export class ClassProcessor extends BaseProcessor {
                   type: 'Class',
                   name: baseTypeName,
                   properties: {
-                    level: 5,
+                    level: NodeLevel.CLASS,
                     isExternal: true,
                   },
                 });

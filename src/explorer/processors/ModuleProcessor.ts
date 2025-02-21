@@ -2,6 +2,7 @@ import ts from 'typescript';
 import { BaseProcessor } from './BaseProcessor';
 import { DecoratorProcessor } from './DecoratorProcessor';
 import { ModuleDecoratorMetadata } from '../types/decorators.types';
+import { NodeLevel } from '../constants/NodeLevels';
 
 export class ModuleProcessor extends BaseProcessor {
   private decoratorProcessor: DecoratorProcessor;
@@ -74,7 +75,7 @@ export class ModuleProcessor extends BaseProcessor {
               typeof ctrl === 'function' ? ctrl.name : this.cleanName(ctrl.toString()),
             ) || [],
           isGlobal: Boolean(moduleMetadata.global),
-          level: cleanClassName === 'AppModule' ? 1 : 2,
+          level: cleanClassName === 'AppModule' ? NodeLevel.APP_MODULE : NodeLevel.CONTROLLER,
         },
       });
     }
@@ -118,7 +119,7 @@ export class ModuleProcessor extends BaseProcessor {
           name: providerName,
           properties: {
             scope: 'module',
-            level: 3,
+            level: NodeLevel.PROVIDER,
             isInjectable: true,
             isUnknown: providerName.startsWith('UnknownProvider_'),
           },
@@ -155,7 +156,7 @@ export class ModuleProcessor extends BaseProcessor {
           name: cleanMethodName,
           properties: {
             visibility: 'public',
-            level: 4,
+            level: NodeLevel.METHOD,
             returnType: 'unknown',
             isAsync: method.constructor.name === 'AsyncFunction',
           },
@@ -196,7 +197,7 @@ export class ModuleProcessor extends BaseProcessor {
           type: 'Controller',
           name: controllerName,
           properties: {
-            level: 3,
+            level: NodeLevel.CONTROLLER,
           },
         });
       }
@@ -231,7 +232,7 @@ export class ModuleProcessor extends BaseProcessor {
           name: cleanMethodName,
           properties: {
             visibility: 'public',
-            level: 4,
+            level: NodeLevel.METHOD,
             returnType: 'unknown',
             isAsync: method.constructor.name === 'AsyncFunction',
             isEndpoint: true,
@@ -320,7 +321,7 @@ export class ModuleProcessor extends BaseProcessor {
             name: exportedName,
             properties: {
               scope: 'module',
-              level: 3,
+              level: NodeLevel.PROVIDER,
               isInjectable: true,
               isExported: true,
             },
@@ -362,7 +363,7 @@ export class ModuleProcessor extends BaseProcessor {
             returnType: method.type?.getText() || 'DynamicModule',
             isDynamic: true,
             isStatic: true,
-            level: 4,
+            level: NodeLevel.METHOD,
             parameters: method.parameters.map((param) => ({
               name: param.name.getText().split('(')[0].trim(),
               type: param.type?.getText(),
