@@ -12,7 +12,7 @@ export class MethodAnalyzer {
     this.decoratorProcessor = new DecoratorProcessor(builder);
   }
 
-  public analyzeClassMethod(node: ts.MethodDeclaration, parentId: string): void {
+  public analyzeClassMethod(node: ts.MethodDeclaration, parentId: string, parentName: string): void {
     const methodName = node.name.getText();
     const methodId = generateId('method', `${parentId}.${methodName}`);
     const visibility = getVisibility(node);
@@ -39,6 +39,7 @@ export class MethodAnalyzer {
         name: methodName,
         type: 'Method',
         properties: {
+          sourceClassName: parentName,
           visibility,
           returnType,
           parameterCount: parameters.length,

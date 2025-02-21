@@ -12,7 +12,7 @@ export class PropertyAnalyzer {
     this.decoratorProcessor = new DecoratorProcessor(builder);
   }
 
-  public analyzeClassProperty(node: ts.PropertyDeclaration, parentId: string): void {
+  public analyzeClassProperty(node: ts.PropertyDeclaration, parentId: string, parentName: string): void {
     if (!node.name) return;
 
     const propertyName = node.name.getText().split('(')[0].trim();
@@ -32,6 +32,7 @@ export class PropertyAnalyzer {
           isStatic: node.modifiers?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword) || false,
           isReadonly: node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword) || false,
           documentation: getDocumentation(node),
+          sourceClassName: parentName,
         },
         decorators: extractedDecorators,
       });

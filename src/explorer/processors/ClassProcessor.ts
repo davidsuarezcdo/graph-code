@@ -45,15 +45,15 @@ export class ClassProcessor extends BaseProcessor {
 
     this.processConstructorInjections(node, classId);
     this.processHeritageClauses(node, classId);
-    this.processMembers(node, classId);
+    this.processMembers(node, classId, className);
   }
 
-  private processMembers(node: ts.ClassDeclaration, classId: string): void {
+  private processMembers(node: ts.ClassDeclaration, classId: string, className: string): void {
     node.members.forEach((member) => {
       if (ts.isMethodDeclaration(member)) {
-        this.methodAnalyzer.analyzeClassMethod(member, classId);
+        this.methodAnalyzer.analyzeClassMethod(member, classId, className);
       } else if (ts.isPropertyDeclaration(member)) {
-        this.propertyAnalyzer.analyzeClassProperty(member, classId);
+        this.propertyAnalyzer.analyzeClassProperty(member, classId, className);
       }
     });
   }
