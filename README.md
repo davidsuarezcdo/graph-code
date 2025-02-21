@@ -114,7 +114,9 @@ The project maintains a minimum of 80% test coverage across all components.
 
 ## 📄 License
 
-[License Type] - See LICENSE file for details
+[GNU Affero General Public License v3 (AGPL-3.0)](LICENSE) - This is a copyleft license that requires anyone who distributes or modifies your code to make the source available under the same terms. It also requires that if the software is used over a network (like a web application), the complete source code must be made available to its users.
+
+For commercial use, please contact the author for explicit permission.
 
 ## 🔗 Links
 
