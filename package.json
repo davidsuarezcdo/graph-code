@@ -2,6 +2,11 @@
   "name": "graph-code",
   "module": "src/index.ts",
   "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "graph": "bun run src/index.ts",
+    "serve": "python -m streamlit run ai/main.py"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
