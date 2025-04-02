@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "graph": "bun run src/index.ts",
-    "serve": "python -m streamlit run ai/main.py"
+    "serve": "python -m streamlit run ai/main.py",
+    "serve:mcp": "python ai/run_mcp_server.py 28888"
   },
   "devDependencies": {
     "@types/bun": "latest"

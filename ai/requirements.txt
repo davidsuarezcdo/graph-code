@@ -1,0 +1,7 @@
+mcp[cli]
+langchain>=0.0.267
+openai>=0.27.0
+python-dotenv>=1.0.0
+neo4j>=5.9.0
+pydantic==2.10.6
+pydantic-settings==2.7.1

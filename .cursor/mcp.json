@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "neo4j-query": {
+      "url": "http://localhost:28888/sse",
+      "type": "sse"
+    }
+  }
+}
