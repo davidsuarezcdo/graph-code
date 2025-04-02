@@ -42,6 +42,12 @@ async function validateEnvironment(): Promise<void> {
 async function main(): Promise<void> {
   let neo4jBuilder: Neo4jGraphBuilder;
   try {
+    const projectPath = process.argv[2]?.trim() ?? '';
+
+    if (!projectPath) {
+      throw new Error('La ruta del proyecto es requerida como argumento.');
+    }
+
     await validateEnvironment();
 
     neo4jBuilder = new Neo4jGraphBuilder(process.env.NEO4J_URI!, process.env.NEO4J_USER!, process.env.NEO4J_PASSWORD!);
@@ -49,12 +55,6 @@ async function main(): Promise<void> {
     console.log('Limpiando base de datos Neo4j...');
     await neo4jBuilder.clearDatabase();
     console.log('Base de datos limpiada correctamente.');
-
-    const projectPath = process.argv[2]?.trim() ?? '';
-
-    if (!projectPath) {
-      throw new Error('La ruta del proyecto es requerida como argumento.');
-    }
 
     console.log(`Construyendo grafo desde TypeScript para el proyecto: ${projectPath}`);
 
