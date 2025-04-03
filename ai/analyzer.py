@@ -25,12 +25,28 @@ class CodeAnalyzer:
             
             The graph contains:
             - Nodes: Module, Controller, Provider, Method, Parameter, Class
-            - Key relationships: CALLS, HAS_PARAMETER, IMPLEMENTS, EXTENDS, INJECTION
+            - Key relationships: 
+                - (Module)-[:DECLARES_CONTROLLER]->(Controller) - A module declares controllers
+                - (Module)-[:PROVIDES]->(Provider) - A module provides services
+                - (Module)-[:EXPORTS]->(Provider) - A module exports providers
+                - (Module)-[:IMPORTS]->(Module) - A module imports other modules
+                - (Class/Provider/Controller)-[:HAS_METHOD]->(Method) - Classes have methods
+                - (Method)-[:CALLS]->(Method) - Methods call other methods
+                - (Method)-[:HAS_PARAMETER]->(Parameter) - Methods have parameters
+                - (Class)-[:IMPLEMENTS]->(Interface) - Classes implement interfaces
+                - (Class)-[:EXTENDS]->(Class) - Classes extend other classes
+                - (Class/Provider/Controller)-[:INJECTION]->(Provider) - Dependency injection
             
             Node Properties:
             - Method: name, visibility, returnType, isAsync, isStatic, callCount
             - Parameter: name, type, isOptional, defaultValue
             - Class: name, isInjectable, isController
+            - Module: name, controllers (list), imports (list), exports (list), providers (list)
+            - Controller: name, level
+            
+            IMPORTANT: Always respect relationship directions exactly as shown above.
+            For example, the relationship between Module and Controller is (Module)-[:DECLARES_CONTROLLER]->(Controller), 
+            NOT (Controller)-[:DECLARES_CONTROLLER]->(Module).
             
             Generate a Cypher query to answer the following question about the codebase:
             Question: {question}
@@ -41,6 +57,7 @@ class CodeAnalyzer:
             3. Include relevant relationships for context
             4. Limit results when appropriate
             5. Order results by relevance (e.g., callCount for usage patterns)
+            6. Always use the correct relationship direction
             
             Return only the Cypher query, no explanations.
             """
