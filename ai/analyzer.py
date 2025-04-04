@@ -18,7 +18,7 @@ class CodeAnalyzer:
     def initialize_qa_chain(self, return_direct: bool = False) -> GraphCypherQAChain:
         if not self._qa_chain and self.db_manager.graph:
             template = """
-            You are an expert in analyzing TypeScript/NestJS code structures in a Neo4j graph database.
+            You are an expert builder of Cypher queries to answer questions about the a codebase graph.
             
             Database Schema:
             {schema}
