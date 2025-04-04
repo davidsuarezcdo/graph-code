@@ -31,9 +31,10 @@ This will configure Cursor to use the neo4j-search MCP server with stdio transpo
 
 ## Tool Usage
 
-The MCP server provides a tool called `search_codebase` that takes a natural language query and returns analysis results from your Neo4j graph database.
+The MCP server provides a tool called `find_code_relationships` that takes a natural language query and returns analysis results from your Neo4j graph database.
 
 Example queries:
+
 - What are the most called methods in the codebase?
 - Which methods have the most parameters?
 - Show me the dependency chain for method X
@@ -42,7 +43,8 @@ Example queries:
 ## Architecture
 
 The server follows the same implementation approach as in the main.py application:
+
 - Uses OpenAIEmbeddings for text processing
 - Connects to Neo4j database using Neo4jManager
 - Leverages CodeAnalyzer for query processing and analysis
-- Returns structured results with both findings and the generated Cypher query 
+- Returns structured results with both findings and the generated Cypher query

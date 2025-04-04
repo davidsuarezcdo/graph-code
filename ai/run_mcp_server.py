@@ -83,7 +83,12 @@ async def find_code_relationships(query: str) -> Dict[str, Any]:
         query: Natural language question about code relationships
     
     Returns:
-        A dictionary containing the discovered relationships and the Cypher query used
+        A JSON response with the following structure:
+        {
+            "success": boolean,
+            "result": any (the result of the query),
+            "cypher_query": string (optional)
+        }
     """
     try:
         # Use analyzer to process the question (similar to handle_question)
