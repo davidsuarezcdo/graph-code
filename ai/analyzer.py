@@ -15,7 +15,7 @@ class CodeAnalyzer:
         )
         self._qa_chain: Optional[GraphCypherQAChain] = None
         
-    def initialize_qa_chain(self) -> GraphCypherQAChain:
+    def initialize_qa_chain(self, return_direct: bool = False) -> GraphCypherQAChain:
         if not self._qa_chain and self.db_manager.graph:
             template = """
             You are an expert in analyzing TypeScript/NestJS code structures in a Neo4j graph database.
@@ -79,13 +79,14 @@ class CodeAnalyzer:
                 cypher_prompt=question_prompt,
                 verbose=True,
                 allow_dangerous_requests=True,
+                return_direct=return_direct
             )
             
         return self._qa_chain
     
-    def analyze(self, question: str) -> Dict[str, Any]:
+    def analyze(self, question: str, return_direct: bool = False) -> Dict[str, Any]:
         if not self._qa_chain:
-            self.initialize_qa_chain()
+            self.initialize_qa_chain(return_direct)
             
         if not self._qa_chain:
             raise RuntimeError("QA Chain not initialized. Make sure the database is connected.")

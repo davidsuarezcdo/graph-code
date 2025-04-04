@@ -87,7 +87,7 @@ async def find_code_relationships(query: str) -> Dict[str, Any]:
     """
     try:
         # Use analyzer to process the question (similar to handle_question)
-        result = analyzer.analyze(query)
+        result = analyzer.analyze(query, return_direct=True)
         
         # Format the response
         if isinstance(result, dict):
@@ -123,21 +123,6 @@ def get_schema() -> str:
 def create_query_prompt(entity_type: str) -> str:
     """Create a prompt template for finding relationships for specific entity types"""
     return f"Find all relationships involving {entity_type} nodes in the codebase"
-
-if __name__ == "__main__":
-    # Connect to database first
-    if not connect_database():
-        print("Failed to connect to database. Exiting.")
-        exit(1)
-    
-    try:
-        mcp.run(transport='sse')
-    except KeyboardInterrupt:
-        print("Server shutdown requested...")
-    except Exception as e:
-        print(f"Error running server: {e}")
-
-
 
 if __name__ == "__main__":
     # Get port from command line or use default
