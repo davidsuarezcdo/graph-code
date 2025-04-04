@@ -1,5 +1,5 @@
-from langchain.graphs import Neo4jGraph
-from langchain.vectorstores import Neo4jVector
+from langchain_community.graphs import Neo4jGraph
+from langchain_community.vectorstores import Neo4jVector
 from langchain.embeddings.base import Embeddings
 from typing import Optional
 from config import Neo4jConfig

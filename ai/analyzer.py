@@ -1,6 +1,6 @@
 from langchain.prompts import PromptTemplate
-from langchain.chains.graph_qa.cypher import GraphCypherQAChain
-from langchain.chat_models import ChatOpenAI
+from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
+from langchain_openai import ChatOpenAI
 from typing import Dict, Any, Optional
 from database import Neo4jManager
 from config import OpenAIConfig
@@ -38,11 +38,11 @@ class CodeAnalyzer:
                 - (Class/Provider/Controller)-[:INJECTION]->(Provider) - Dependency injection
             
             Node Properties:
-            - Method: name, visibility, returnType, isAsync, isStatic, callCount
-            - Parameter: name, type, isOptional, defaultValue
-            - Class: name, isInjectable, isController
-            - Module: name, controllers (list), imports (list), exports (list), providers (list)
-            - Controller: name, level
+            - Method: name, visibility, returnType, isAsync, isStatic, callCount, filepath (format: 'path/to/file.ts:startLine:endLine')
+            - Parameter: name, type, isOptional, defaultValue, filepath (format: 'path/to/file.ts:startLine:endLine')
+            - Class: name, isInjectable, isController, filepath (format: 'path/to/file.ts:startLine:endLine')
+            - Module: name, controllers (list), imports (list), exports (list), providers (list), filepath (format: 'path/to/file.ts:startLine:endLine')
+            - Controller: name, level, filepath (format: 'path/to/file.ts:startLine:endLine')
             
             IMPORTANT: Always respect relationship directions exactly as shown above.
             For example, the relationship between Module and Controller is (Module)-[:DECLARES_CONTROLLER]->(Controller), 
@@ -58,6 +58,12 @@ class CodeAnalyzer:
             4. Limit results when appropriate
             5. Order results by relevance (e.g., callCount for usage patterns)
             6. Always use the correct relationship direction
+            7. Use filepath for each entity to provide source code location references in your results
+            
+            Examples of filepath usage:
+            - To find entities in specific directories: WHERE n.filepath CONTAINS 'src/controllers'
+            - To find entities in specific files: WHERE n.filepath STARTS WITH 'src/services/auth.service.ts:'
+            - To locate specific methods: RETURN n.name, n.filepath to show exact file and line references
             
             Return only the Cypher query, no explanations.
             """
@@ -72,7 +78,7 @@ class CodeAnalyzer:
                 graph=self.db_manager.graph,
                 cypher_prompt=question_prompt,
                 verbose=True,
-                allow_dangerous_requests=True
+                allow_dangerous_requests=True,
             )
             
         return self._qa_chain

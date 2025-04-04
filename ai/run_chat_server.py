@@ -1,6 +1,5 @@
-import os
 import streamlit as st
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from config import load_config
 from database import Neo4jManager
 from analyzer import CodeAnalyzer
