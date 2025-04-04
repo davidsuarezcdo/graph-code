@@ -1,8 +1,9 @@
 import ts from 'typescript';
-import { BaseProcessor } from './BaseProcessor';
+import { BaseProcessor, FileContext } from './BaseProcessor';
 import { DecoratorProcessor } from './DecoratorProcessor';
 import { ModuleDecoratorMetadata } from '../types/decorators.types';
 import { NodeLevel } from '../constants/NodeLevels';
+import { getNodePosition } from '../utils/nodeUtils';
 
 export class ModuleProcessor extends BaseProcessor {
   private decoratorProcessor: DecoratorProcessor;
@@ -12,16 +13,17 @@ export class ModuleProcessor extends BaseProcessor {
     this.decoratorProcessor = new DecoratorProcessor(builder);
   }
 
-  public process(node: ts.ClassDeclaration): void {
+  public process(node: ts.ClassDeclaration, context?: FileContext): void {
     if (!node.name) return;
 
     const decorators = this.decoratorProcessor.extractDecorators(node);
     const moduleDecorator = decorators.find((d) => d.name === 'Module');
     const moduleId = this.generateId('module', node.name.getText());
+    const position = getNodePosition(node);
 
     if (moduleDecorator && moduleDecorator.arguments?.[0]) {
       const moduleMetadata = moduleDecorator.arguments[0] as ModuleDecoratorMetadata;
-      this.processModuleMetadata(moduleMetadata, moduleId, node.name.getText());
+      this.processModuleMetadata(moduleMetadata, moduleId, node.name.getText(), context, position);
     }
 
     this.processDynamicModuleMethods(node, moduleId);
@@ -44,7 +46,13 @@ export class ModuleProcessor extends BaseProcessor {
     return name.split(/[<(]/)[0].trim();
   }
 
-  private processModuleMetadata(moduleMetadata: ModuleDecoratorMetadata, moduleId: string, className: string): void {
+  private processModuleMetadata(
+    moduleMetadata: ModuleDecoratorMetadata,
+    moduleId: string,
+    className: string,
+    context?: FileContext,
+    position?: { startLine: number; endLine: number },
+  ): void {
     const cleanClassName = this.cleanName(className);
 
     if (!this.builder.hasNode(moduleId)) {
@@ -76,6 +84,8 @@ export class ModuleProcessor extends BaseProcessor {
             ) || [],
           isGlobal: Boolean(moduleMetadata.global),
           level: cleanClassName === 'AppModule' ? NodeLevel.APP_MODULE : NodeLevel.CONTROLLER,
+          filepath:
+            context?.filePath && position ? `${context.filePath}:${position.startLine}:${position.endLine}` : undefined,
         },
       });
     }

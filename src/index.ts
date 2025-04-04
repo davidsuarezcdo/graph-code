@@ -39,6 +39,18 @@ async function validateEnvironment(): Promise<void> {
   }
 }
 
+/**
+ * Extrae el nombre del directorio base del proyecto
+ * @param projectPath Ruta completa del proyecto
+ * @returns Nombre del último directorio
+ */
+function extractProjectBaseName(projectPath: string): string {
+  // Normaliza la ruta para manejar diferentes separadores
+  const normalizedPath = path.normalize(projectPath);
+  // Extrae el nombre del último directorio (último segmento de la ruta)
+  return path.basename(normalizedPath);
+}
+
 async function main(): Promise<void> {
   let neo4jBuilder: Neo4jGraphBuilder;
   try {
@@ -48,9 +60,18 @@ async function main(): Promise<void> {
       throw new Error('La ruta del proyecto es requerida como argumento.');
     }
 
+    // Extraer el nombre base del proyecto (último directorio)
+    const projectBaseName = extractProjectBaseName(projectPath);
+    console.log(`Nombre base del proyecto: ${projectBaseName}`);
+
     await validateEnvironment();
 
-    neo4jBuilder = new Neo4jGraphBuilder(process.env.NEO4J_URI!, process.env.NEO4J_USER!, process.env.NEO4J_PASSWORD!);
+    neo4jBuilder = new Neo4jGraphBuilder(
+      process.env.NEO4J_URI!,
+      process.env.NEO4J_USER!,
+      process.env.NEO4J_PASSWORD!,
+      projectBaseName, // Pasar el nombre base para procesar rutas relativas
+    );
 
     console.log('Limpiando base de datos Neo4j...');
     await neo4jBuilder.clearDatabase();
@@ -58,7 +79,7 @@ async function main(): Promise<void> {
 
     console.log(`Construyendo grafo desde TypeScript para el proyecto: ${projectPath}`);
 
-    const builder = new TypeScriptGraphBuilder();
+    const builder = new TypeScriptGraphBuilder(projectBaseName);
     const graph = await builder.buildGraph(projectPath);
 
     const outputPath = path.join(process.cwd(), 'typescript-graph.json');

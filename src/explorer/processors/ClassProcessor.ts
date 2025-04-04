@@ -4,6 +4,8 @@ import { DecoratorProcessor } from './DecoratorProcessor';
 import { PropertyAnalyzer } from '../services/PropertyAnalyzer';
 import { MethodAnalyzer } from '../services/MethodAnalyzer';
 import { NodeLevel } from '../constants/NodeLevels';
+import { FileContext } from './BaseProcessor';
+import { getNodePosition } from '../utils/nodeUtils';
 
 export class ClassProcessor extends BaseProcessor {
   private decoratorProcessor: DecoratorProcessor;
@@ -17,13 +19,14 @@ export class ClassProcessor extends BaseProcessor {
     this.methodAnalyzer = new MethodAnalyzer(builder);
   }
 
-  public process(node: ts.ClassDeclaration): void {
+  public process(node: ts.ClassDeclaration, context?: FileContext): void {
     if (!node.name) return;
 
     const className = node.name.getText();
     const extractedDecorators = this.decoratorProcessor.extractDecorators(node);
     const isController = extractedDecorators.some((d) => d.name === 'Controller');
     const isInjectable = extractedDecorators.some((d) => d.name === 'Injectable');
+    const position = getNodePosition(node);
 
     // Generate the correct ID based on the type of the class
     const classId = this.generateId(isController ? 'controller' : isInjectable ? 'provider' : 'class', className);
@@ -39,21 +42,22 @@ export class ClassProcessor extends BaseProcessor {
         isController,
         level: isController ? NodeLevel.CONTROLLER : isInjectable ? NodeLevel.PROVIDER : NodeLevel.CLASS,
         scope: isInjectable ? 'module' : undefined,
+        filepath: context?.filePath ? `${context.filePath}:${position.startLine}:${position.endLine}` : undefined,
       },
       decorators: extractedDecorators,
     });
 
     this.processConstructorInjections(node, classId);
     this.processHeritageClauses(node, classId);
-    this.processMembers(node, classId, className);
+    this.processMembers(node, classId, className, context);
   }
 
-  private processMembers(node: ts.ClassDeclaration, classId: string, className: string): void {
+  private processMembers(node: ts.ClassDeclaration, classId: string, className: string, context?: FileContext): void {
     node.members.forEach((member) => {
       if (ts.isMethodDeclaration(member)) {
-        this.methodAnalyzer.analyzeClassMethod(member, classId, className);
+        this.methodAnalyzer.analyzeClassMethod(member, classId, className, context);
       } else if (ts.isPropertyDeclaration(member)) {
-        this.propertyAnalyzer.analyzeClassProperty(member, classId, className);
+        this.propertyAnalyzer.analyzeClassProperty(member, classId, className, context);
       }
     });
   }

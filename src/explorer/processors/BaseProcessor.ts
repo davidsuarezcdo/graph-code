@@ -2,6 +2,10 @@ import ts from 'typescript';
 import { TypeScriptGraphBuilder } from '../core/TypeScriptGraphBuilder';
 import { generateId, getDocumentation, getVisibility } from '../utils/nodeUtils';
 
+export interface FileContext {
+  filePath?: string;
+}
+
 export abstract class BaseProcessor {
   protected builder: TypeScriptGraphBuilder;
 
@@ -32,5 +36,5 @@ export abstract class BaseProcessor {
     return undefined;
   }
 
-  abstract process(node: ts.Node): void;
+  abstract process(node: ts.Node, context?: FileContext): void;
 }

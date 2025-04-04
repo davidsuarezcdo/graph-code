@@ -1,7 +1,8 @@
 import ts from 'typescript';
 import { TypeScriptGraphBuilder } from '../core/TypeScriptGraphBuilder';
 import { DecoratorProcessor } from '../processors/DecoratorProcessor';
-import { generateId, getDocumentation, getVisibility } from '../utils/nodeUtils';
+import { generateId, getDocumentation, getVisibility, getNodePosition } from '../utils/nodeUtils';
+import { FileContext } from '../processors/BaseProcessor';
 
 export class PropertyAnalyzer {
   private builder: TypeScriptGraphBuilder;
@@ -12,13 +13,22 @@ export class PropertyAnalyzer {
     this.decoratorProcessor = new DecoratorProcessor(builder);
   }
 
-  public analyzeClassProperty(node: ts.PropertyDeclaration, parentId: string, parentName: string): void {
+  public analyzeClassProperty(
+    node: ts.PropertyDeclaration,
+    parentId: string,
+    parentName: string,
+    context?: FileContext,
+  ): void {
     if (!node.name) return;
 
     const propertyName = node.name.getText().split('(')[0].trim();
     const propertyId = generateId('property', `${parentId}.${propertyName}`);
+    const visibility = getVisibility(node);
+    const type = node.type ? this.getTypeNameFromTypeNode(node.type) : 'any';
+    const isReadonly = node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.ReadonlyKeyword) || false;
+    const isStatic = node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.StaticKeyword) || false;
     const extractedDecorators = this.decoratorProcessor.extractDecorators(node);
-    const propertyType = node.type ? this.getTypeNameFromTypeNode(node.type) : 'any';
+    const position = getNodePosition(node);
 
     if (!this.builder.hasNode(propertyId)) {
       this.builder.addNode({
@@ -26,13 +36,14 @@ export class PropertyAnalyzer {
         type: 'Property',
         name: propertyName,
         properties: {
-          type: propertyType,
-          visibility: getVisibility(node),
+          type,
+          visibility,
           level: 5,
-          isStatic: node.modifiers?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword) || false,
-          isReadonly: node.modifiers?.some((m) => m.kind === ts.SyntaxKind.ReadonlyKeyword) || false,
+          isStatic,
+          isReadonly,
           documentation: getDocumentation(node),
           sourceClassName: parentName,
+          filepath: context?.filePath ? `${context.filePath}:${position.startLine}:${position.endLine}` : undefined,
         },
         decorators: extractedDecorators,
       });

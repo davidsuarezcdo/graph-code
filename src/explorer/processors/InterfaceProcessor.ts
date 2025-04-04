@@ -1,12 +1,15 @@
 import ts from 'typescript';
-import { BaseProcessor } from './BaseProcessor';
+import { BaseProcessor, FileContext } from './BaseProcessor';
+import { NodeLevel } from '../constants/NodeLevels';
+import { getNodePosition } from '../utils/nodeUtils';
 
 export class InterfaceProcessor extends BaseProcessor {
-  public process(node: ts.InterfaceDeclaration): void {
+  public process(node: ts.InterfaceDeclaration, context?: FileContext): void {
     if (!node.name) return;
 
     const interfaceName = node.name.getText();
     const interfaceId = this.generateId('interface', interfaceName);
+    const position = getNodePosition(node);
 
     this.builder.addNode({
       id: interfaceId,
@@ -15,6 +18,7 @@ export class InterfaceProcessor extends BaseProcessor {
       properties: {
         documentation: this.getDocumentation(node),
         level: 5,
+        filepath: context?.filePath ? `${context.filePath}:${position.startLine}:${position.endLine}` : undefined,
       },
     });
 

@@ -18,14 +18,32 @@ export class TypeScriptGraphBuilder {
     decoratorProcessor: DecoratorProcessor;
   };
   private methodNameIndex: Map<string, string> = new Map();
+  private projectBaseName: string;
 
-  constructor() {
+  constructor(projectBaseName?: string) {
+    this.projectBaseName = projectBaseName || '';
     this.processors = {
       classProcessor: new ClassProcessor(this),
       moduleProcessor: new ModuleProcessor(this),
       interfaceProcessor: new InterfaceProcessor(this),
       decoratorProcessor: new DecoratorProcessor(this),
     };
+  }
+
+  /**
+   * Convierte una ruta absoluta a relativa basada en el nombre del proyecto
+   */
+  public getRelativePath(absolutePath: string): string {
+    if (!this.projectBaseName || !absolutePath) {
+      return absolutePath;
+    }
+
+    const parts = absolutePath.split(this.projectBaseName);
+    if (parts.length > 1) {
+      // Tomar la parte después del nombre base y eliminar el separador inicial
+      return parts[parts.length - 1].replace(/^[\/\\]/, '');
+    }
+    return absolutePath;
   }
 
   public async buildGraph(rootPath: string): Promise<GraphData> {
@@ -53,7 +71,12 @@ export class TypeScriptGraphBuilder {
 
     for (const sourceFile of program.getSourceFiles()) {
       if (!sourceFile.isDeclarationFile) {
-        this.visitNode(sourceFile);
+        // Almacenar ruta relativa del archivo en lugar de la absoluta
+        const filePath = sourceFile.fileName;
+        const relativePath = this.getRelativePath(filePath);
+
+        // Añadir información de archivo al contexto de visita
+        this.visitNode(sourceFile, { filePath: relativePath });
       }
     }
 
@@ -63,26 +86,31 @@ export class TypeScriptGraphBuilder {
     };
   }
 
-  private visitNode(node: ts.Node): void {
+  private visitNode(node: ts.Node, context?: { filePath: string }): void {
     switch (node.kind) {
       case ts.SyntaxKind.ClassDeclaration:
-        this.processors.classProcessor.process(node as ts.ClassDeclaration);
+        this.processors.classProcessor.process(node as ts.ClassDeclaration, context);
         break;
       case ts.SyntaxKind.InterfaceDeclaration:
-        this.processors.interfaceProcessor.process(node as ts.InterfaceDeclaration);
+        this.processors.interfaceProcessor.process(node as ts.InterfaceDeclaration, context);
         break;
     }
 
     // Process decorators if present
     if (ts.isClassDeclaration(node)) {
-      this.processors.moduleProcessor.process(node);
-      this.processors.decoratorProcessor.process(node);
+      this.processors.moduleProcessor.process(node, context);
+      this.processors.decoratorProcessor.process(node, context);
     }
 
-    ts.forEachChild(node, (child) => this.visitNode(child));
+    ts.forEachChild(node, (child) => this.visitNode(child, context));
   }
 
   public addNode(node: GraphNode): void {
+    // Si el nodo tiene propiedades de archivo, asegurarse de que use la ruta relativa
+    if (node.properties?.filepath && typeof node.properties.filepath === 'string') {
+      node.properties.filepath = this.getRelativePath(node.properties.filepath);
+    }
+
     this.nodes.set(node.id, node);
     if (node.type === 'Method') {
       this.methodNameIndex.set(node.name, node.id);

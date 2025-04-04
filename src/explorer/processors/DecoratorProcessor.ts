@@ -1,10 +1,10 @@
 import ts from 'typescript';
-import { BaseProcessor } from './BaseProcessor';
+import { BaseProcessor, FileContext } from './BaseProcessor';
 import { DecoratorMetadata } from '../types/decorators.types';
 import { NodeLevel } from '../constants/NodeLevels';
 
 export class DecoratorProcessor extends BaseProcessor {
-  public process(node: ts.Node): void {
+  public process(node: ts.Node, context?: FileContext): void {
     if (!ts.canHaveDecorators(node)) return;
 
     const decorators = this.extractDecorators(node);

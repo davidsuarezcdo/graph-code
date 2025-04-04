@@ -1,7 +1,8 @@
 import ts from 'typescript';
 import { TypeScriptGraphBuilder } from '../core/TypeScriptGraphBuilder';
 import { DecoratorProcessor } from '../processors/DecoratorProcessor';
-import { generateId, getDocumentation, getVisibility } from '../utils/nodeUtils';
+import { generateId, getDocumentation, getVisibility, getNodePosition } from '../utils/nodeUtils';
+import { FileContext } from '../processors/BaseProcessor';
 
 export class MethodAnalyzer {
   private builder: TypeScriptGraphBuilder;
@@ -12,7 +13,12 @@ export class MethodAnalyzer {
     this.decoratorProcessor = new DecoratorProcessor(builder);
   }
 
-  public analyzeClassMethod(node: ts.MethodDeclaration, parentId: string, parentName: string): void {
+  public analyzeClassMethod(
+    node: ts.MethodDeclaration,
+    parentId: string,
+    parentName: string,
+    context?: FileContext,
+  ): void {
     const methodName = node.name.getText();
     const methodId = generateId('method', `${parentId}.${methodName}`);
     const visibility = getVisibility(node);
@@ -21,6 +27,7 @@ export class MethodAnalyzer {
     const isStatic = node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.StaticKeyword) || false;
     const isAbstract = node.modifiers?.some((mod) => mod.kind === ts.SyntaxKind.AbstractKeyword) || false;
     const extractedDecorators = this.decoratorProcessor.extractDecorators(node);
+    const position = getNodePosition(node);
 
     // Process parameters
     const parameters = node.parameters.map((param) => ({
@@ -53,6 +60,7 @@ export class MethodAnalyzer {
           isAbstract,
           documentation: getDocumentation(node),
           callCount: 0,
+          filepath: context?.filePath ? `${context.filePath}:${position.startLine}:${position.endLine}` : undefined,
         },
         decorators: extractedDecorators,
       });
@@ -76,6 +84,7 @@ export class MethodAnalyzer {
             isOptional: param.isOptional,
             defaultValue: param.defaultValue || null,
             index,
+            filepath: context?.filePath ? `${context.filePath}:${position.startLine}` : undefined,
           },
         });
 
