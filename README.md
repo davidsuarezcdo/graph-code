@@ -1,84 +1,52 @@
-# Graph-Code: Code Analysis Using Knowledge Graphs
+# Graph-Code: Codebase Knowledge Graph System
 
-A powerful TypeScript-based code analysis system that leverages knowledge graphs to analyze and visualize code structures using Neo4j. Graph-Code transforms your codebase into a navigable graph database, enabling advanced analysis, visualization, and AI-powered natural language queries.
+A powerful TypeScript-based code analysis system that transforms your codebase into a comprehensive Knowledge Graph using Neo4j. Graph-Code creates a navigable Codebase Knowledge Graph, enabling advanced analysis, visualization, and AI-powered natural language queries about your code structure and relationships.
+
+## 🧠 Why Codebase Knowledge Graphs?
+
+Codebase Knowledge Graphs offer significant advantages over traditional code analysis tools:
+
+- **Relationship-First Analysis**: Unlike flat file analysis, Codebase Knowledge Graphs capture the relationships between code entities, providing insights into how components interact.
+- **Natural Language Exploration**: Query your codebase using everyday language rather than complex search patterns.
+- **Knowledge Graph vs. Vector Database**: Codebase Knowledge Graphs use graph databases instead of vector databases, allowing queries that follow meaningful relationships rather than just similarity scores.
+- **Visual Understanding**: See the structure of your code visually, making it easier to understand complex architectures.
+- **Precise Impact Analysis**: Predict exactly which components will be affected by changes to specific code elements.
+
+## 🔄 How It Works
+
+1. **Code Parsing**: The system scans your codebase using the TypeScript Compiler API.
+2. **Knowledge Graph Construction**: Code entities and relationships are extracted and transformed into a comprehensive graph model.
+3. **Neo4j Storage**: The Codebase Knowledge Graph is stored in Neo4j database for efficient querying.
+4. **AI Integration**: Natural language interfaces connect to LLMs to transform questions into graph queries.
+5. **Visualization**: Results are presented through interactive visualizations and API responses.
 
 ## 🌟 Features
 
-- **Code Analysis**: Parse and analyze TypeScript/JavaScript codebases with the TypeScript Compiler API
-- **Knowledge Graph**: Store and query code relationships in Neo4j graph database
+- **Codebase Analysis**: Parse and analyze TypeScript/JavaScript codebases with the TypeScript Compiler API
+- **Knowledge Graph Generation**: Store and query code relationships in Neo4j graph database
 - **Advanced Querying**: Use natural language and Cypher queries to explore code relationships
 - **AI Integration**: Leverage AI models to transform natural language questions into graph queries
 - **NestJS Support**: Special handling for NestJS applications with module, controller, and provider analysis
+- **Improved Code Understanding**: Visualize and understand complex code structures and relationships
+- **Impact Analysis**: Assess the ripple effects of code changes before implementation
+- **Dependency Tracking**: Identify and manage dependencies between components
 
-## 🚀 Getting Started
+## 💡 Use Cases
 
-### Prerequisites
+The Codebase Knowledge Graph provides numerous practical applications for development teams:
 
-- Node.js (v16 or higher)
-- Bun.js
-- Python 3.8+
-- Neo4j Database (v5.x)
-
-### Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone <repository-url>
-   cd graph-code
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   bun install
-   pip install -r requirements.txt
-   ```
-
-3. Configure environment variables:
-   ```bash
-   cp ai/.env.example ai/.env
-   # Edit .env with your Neo4j credentials and configuration
-   ```
-
-## 🛠️ Usage
-
-### Building the Project
-
-```bash
-bun run compile
-```
-
-### Running the Graph Analysis
-
-```bash
-bun run build:graph <path-to-project>
-```
-
-Where `<path-to-project>` is the path to the project you want to analyze.
-
-### Starting the Chat Interface
-
-```bash
-bun run serve:chat
-```
-
-### Starting the MCP Server
-
-```bash
-bun run serve:mcp
-```
-
-Example queries:
-
-- "What are the most called methods in the codebase?"
-- "Show me the dependency chain for the AuthService class"
-- "Which controllers have the most endpoints?"
-- "Find all classes that implement the UserRepository interface"
+- **Code Navigation**: Easily traverse complex codebases by following relationships between components.
+- **Impact Analysis**: Understand the cascade effect of changes before implementation.
+- **Technical Debt Identification**: Find areas of high complexity or excessive dependencies.
+- **Onboarding Acceleration**: Help new team members understand codebase structure quickly.
+- **Architecture Validation**: Ensure implementation matches intended architecture.
+- **Refactoring Planning**: Identify the most effective areas for refactoring efforts.
+- **Security Analysis**: Trace data flow paths to identify potential security vulnerabilities.
+- **Documentation Generation**: Automatically generate documentation based on code structure.
 
 ## 🏗️ Architecture
 
-The system consists of three main components:
+The Codebase Knowledge Graph system consists of these main components:
 
 1. **Code Scanner & Parser**
 
@@ -168,7 +136,7 @@ graph TD
 
 ## 📊 Data Model
 
-The knowledge graph uses the following Entity-Property-Relationship structure:
+The Codebase Knowledge Graph uses the following entities and relationships structure:
 
 ```mermaid
 erDiagram
@@ -253,7 +221,7 @@ erDiagram
     Method ||--o{ Dependency : INJECTION
 ```
 
-Key entities in the knowledge graph:
+Key entities in the Codebase Knowledge Graph:
 
 - **Modules**: TypeScript modules with imports, controllers, and providers
 - **Classes**: TypeScript classes with methods and inheritance relationships
@@ -264,7 +232,75 @@ Key entities in the knowledge graph:
 - **Providers**: Service providers and dependency injection
 - **Dependencies**: External and internal code dependencies
 
-The knowledge graph captures the relationships between these entities, enabling powerful code analysis and exploration capabilities.
+The Codebase Knowledge Graph captures the relationships between these entities, enabling powerful code analysis and exploration capabilities.
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- Bun.js
+- Python 3.8+
+- Neo4j Database (v5.x)
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone <repository-url>
+   cd graph-code
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   bun install
+   pip install -r requirements.txt
+   ```
+
+3. Configure environment variables:
+   ```bash
+   cp ai/.env.example ai/.env
+   # Edit .env with your Neo4j credentials and configuration
+   ```
+
+## 🛠️ Usage
+
+### Building the Project
+
+```bash
+bun run compile
+```
+
+### Building the Codebase Knowledge Graph
+
+```bash
+bun run build:graph <path-to-project>
+```
+
+Where `<path-to-project>` is the path to the project you want to analyze.
+
+### Starting the Chat Interface
+
+```bash
+bun run serve:chat
+```
+
+### Starting the MCP Server
+
+```bash
+bun run serve:mcp
+```
+
+Example queries for your Codebase Knowledge Graph:
+
+- "What are the most called methods in the codebase?"
+- "Show me the dependency chain for the AuthService class"
+- "Which controllers have the most endpoints?"
+- "Find all classes that implement the UserRepository interface"
+- "What functions would be affected if I change this module?"
+- "Which classes have the highest complexity in the codebase?"
 
 ## 🧪 Testing
 
@@ -293,3 +329,5 @@ For commercial use, please contact the author for explicit permission.
 - [Project Documentation](docs/)
 - [Issue Tracker](issues/)
 - [Neo4j Documentation](https://neo4j.com/docs/)
+- [FalkorDB Code Graph](https://www.falkordb.com/blog/code-graph/)
+- [Neo4j Codebase Knowledge Graph](https://neo4j.com/blog/developer/codebase-knowledge-graph/)
