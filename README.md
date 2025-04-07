@@ -33,16 +33,14 @@ Codebase Knowledge Graphs offer significant advantages over traditional code ana
 
 ## 💡 Use Cases
 
-The Codebase Knowledge Graph provides numerous practical applications for development teams:
+The Codebase Knowledge Graph provides practical applications that have been validated in real-world scenarios:
 
 - **Code Navigation**: Easily traverse complex codebases by following relationships between components.
-- **Impact Analysis**: Understand the cascade effect of changes before implementation.
-- **Technical Debt Identification**: Find areas of high complexity or excessive dependencies.
-- **Onboarding Acceleration**: Help new team members understand codebase structure quickly.
-- **Architecture Validation**: Ensure implementation matches intended architecture.
-- **Refactoring Planning**: Identify the most effective areas for refactoring efforts.
-- **Security Analysis**: Trace data flow paths to identify potential security vulnerabilities.
+- **Code Understanding**: Gain insights into modules, functions, classes, and methods and their relationships.
 - **Documentation Generation**: Automatically generate documentation based on code structure.
+- **Dependency Discovery**: Identify and map dependencies within your code.
+- **Impact Analysis**: Understand how changes to one part of the code affect other components.
+- **Code Search**: Find code not just by keywords but by understanding relationships between elements.
 
 ## 🏗️ Architecture
 
