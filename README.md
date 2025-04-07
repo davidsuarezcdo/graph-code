@@ -6,8 +6,6 @@ A powerful TypeScript-based code analysis system that leverages knowledge graphs
 
 - **Code Analysis**: Parse and analyze TypeScript/JavaScript codebases with the TypeScript Compiler API
 - **Knowledge Graph**: Store and query code relationships in Neo4j graph database
-- **Interactive Visualization**: Explore code structures through an intuitive interface
-- **Real-time Updates**: Track code changes and update the graph automatically
 - **Advanced Querying**: Use natural language and Cypher queries to explore code relationships
 - **AI Integration**: Leverage AI models to transform natural language questions into graph queries
 - **NestJS Support**: Special handling for NestJS applications with module, controller, and provider analysis
@@ -48,27 +46,27 @@ A powerful TypeScript-based code analysis system that leverages knowledge graphs
 ### Building the Project
 
 ```bash
-bun run build
+bun run compile
 ```
 
 ### Running the Graph Analysis
 
 ```bash
-bun run graph
+bun run build:graph <path-to-project>
 ```
 
-### Starting the Explorer Interface
+Where `<path-to-project>` is the path to the project you want to analyze.
+
+### Starting the Chat Interface
 
 ```bash
-bun run serve
+bun run serve:chat
 ```
 
-### Using Natural Language Queries
-
-Graph-Code provides an AI-powered natural language interface for querying your codebase:
+### Starting the MCP Server
 
 ```bash
-python ai/run_mcp_server.py
+bun run serve:mcp
 ```
 
 Example queries:
@@ -105,6 +103,68 @@ The system consists of three main components:
    - Automatic Cypher query generation
    - MCP (Model Context Protocol) server for IDE integration
    - Code analysis and insights generation
+
+### System Architecture Diagram
+
+```mermaid
+graph TD
+    subgraph Code Analysis
+        Scanner[Code Scanner]
+        Parser[AST Parser]
+        Analyzer[Code Analyzer]
+        TSBuilder[TypeScript Graph Builder]
+    end
+
+    subgraph Knowledge Graph
+        Neo4j[(Neo4j Database)]
+        GraphBuilder[Neo4j Graph Builder]
+        QueryEngine[Query Engine]
+        VectorStore[Vector Store]
+    end
+
+    subgraph Explorer
+        UI[Web Interface]
+        APILayer[API Layer]
+        Visualizer[Graph Visualizer]
+    end
+
+    subgraph AI Integration
+        LLMService[LLM Service]
+        CodeAnalyzer[Code Analyzer]
+        MCPServer[MCP Server]
+        ChatServer[Chat Interface]
+    end
+
+    Scanner --> Parser
+    Parser --> Analyzer
+    Analyzer --> TSBuilder
+    TSBuilder --> GraphBuilder
+    GraphBuilder --> Neo4j
+    QueryEngine --> Neo4j
+
+    Neo4j --> VectorStore
+
+    APILayer --> QueryEngine
+    UI --> APILayer
+    Visualizer --> APILayer
+
+    CodeAnalyzer --> Neo4j
+    CodeAnalyzer --> LLMService
+    MCPServer --> CodeAnalyzer
+    ChatServer --> CodeAnalyzer
+
+    APILayer --> MCPServer
+
+    classDef core fill:#553366,stroke:#aa88bb,stroke-width:2px
+    classDef db fill:#335566,stroke:#88aabb,stroke-width:2px
+    classDef ui fill:#555533,stroke:#bbbb88,stroke-width:2px
+    classDef ai fill:#553355,stroke:#bb88aa,stroke-width:2px
+
+    class Scanner,Parser,Analyzer,TSBuilder core
+    class Neo4j,GraphBuilder,QueryEngine,VectorStore db
+    class UI,APILayer,Visualizer ui
+    class LLMService,CodeAnalyzer,MCPServer,ChatServer ai
+```
 
 ## 📊 Data Model
 
@@ -213,12 +273,6 @@ bun test
 ```
 
 The project maintains a minimum of 80% test coverage across all components.
-
-## 📚 Documentation
-
-- `/docs/technical.md` - Technical specifications
-- `/docs/project.md` - Project vision and overview
-- `/docs/architecture.mermaid` - System architecture diagram
 
 ## 🤝 Contributing
 

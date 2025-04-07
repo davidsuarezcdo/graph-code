@@ -3,8 +3,8 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "graph": "bun run src/index.ts",
+    "compile": "tsc",
+    "build:graph": "bun run src/index.ts",
     "serve:chat": "python -m streamlit run ai/run_chat_server.py",
     "serve:mcp": "python ai/run_mcp_server.py 28888"
   },
