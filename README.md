@@ -1,5 +1,7 @@
 # Graph-Code: Codebase Knowledge Graph System
 
+Graph-Code is a tool that converts your project's code into a visual relationship map. It allows you to easily understand how different parts of your code connect, ask questions in natural language about your project's structure, and visualize these connections graphically. It's like having an intelligent map of your code that you can query to better understand complex projects and predict the impact of changes before making them.
+
 A powerful TypeScript-based code analysis system that transforms your codebase into a comprehensive Knowledge Graph using Neo4j. Graph-Code creates a navigable Codebase Knowledge Graph, enabling advanced analysis, visualization, and AI-powered natural language queries about your code structure and relationships.
 
 ## 🧠 Why Codebase Knowledge Graphs?
